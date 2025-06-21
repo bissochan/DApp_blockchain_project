@@ -30,14 +30,17 @@ function ExperienceList() {
         <p>Nessuna esperienza trovata.</p>
       ) : (
         <div className="space-y-4">
-          {data.map((exp, index) => (
-            <div key={index} className="border-b pb-2">
+          {data.map((exp) => (
+            <div key={exp.id} className="border-b pb-2">
               <h3 className="font-semibold">{exp.company}</h3>
               <p>{exp.role}</p>
               <p className="text-gray-600">
                 {exp.startDate} - {exp.endDate || "In corso"}
               </p>
               <p className="text-sm text-gray-500">{exp.description}</p>
+              <p className="text-sm text-gray-700 break-all">
+                <span className="font-medium">Hash:</span> {exp.hash || "Non disponibile"}
+              </p>
             </div>
           ))}
         </div>
