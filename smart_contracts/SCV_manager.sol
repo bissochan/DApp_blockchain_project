@@ -1,1 +1,0 @@
-// This contract would manage our main system, we got to decide to either implement a monolithic contract or multiple contracts
