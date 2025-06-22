@@ -62,16 +62,44 @@ npm run preview
 
 # Blockchain Setup
 
-```sh
+`hardhat.config.js` is set up to create 6 wallets: 1 master wallet for the backend and 5 wallets for the users.
+
+```bash
 cd blockchain_folder
 npm init -y
 npm install --save-dev hardhat
 npx hardhat compile
 npx hardhat node
 ```
-On another terminal, deploy the contract:
 
-```sh
+In another terminal, deploy the contract:
+
+```bash
 cd blockchain_folder
 npx hardhat run scripts/deploy.js --network localhost
+```
+
+---
+---
+
+# Backend Setup
+
+```bash
+cd backend
+npm install
+npm start
+```
+
+## Testing Mockup
+
+```bash
+cd backend/testing
+```
+
+### Testing Registration
+
+Each user registration creates a wallet, linking to a pre-created Hardhat wallet.
+
+```bash
+node registration.js
 ```

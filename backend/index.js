@@ -1,4 +1,27 @@
-import { createServer } from "http";
+import cors from "cors";
+import { JsonRpcProvider, Wallet } from "ethers";
+import express from "express";
+import fs from "fs";
+import path from "path";
+import authRouter from "./auth.js";
+
+const walletsPath = path.resolve("../blockchain_folder/wallets.json");
+const walletsData = fs.readFileSync(walletsPath, "utf-8");
+const wallets = JSON.parse(walletsData);
+const firstWallet = wallets[0];
+
+const provider = new JsonRpcProvider("http://127.0.0.1:8545");
+const masterWallet = new Wallet(firstWallet.privateKey, provider);
+console.log("Master Wallet Address:", masterWallet.address);
+console.log("Master Private Key:", masterWallet.privateKey);
+
+const app = express();
+const PORT = 5000;
+
+// Middleware
+app.use(cors({ origin: "http://localhost:5173" }));
+app.use(express.json());
+
 
 // Mock hash generator
 const generateMockHash = () => {
@@ -62,121 +85,75 @@ const verificationResults = {
   },
 };
 
-// HTTP server
-const server = createServer((req, res) => {
-  // Log request
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+// Routes
 
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+// POST /api/auth/register/candidate or /company
+app.use("/api/auth", authRouter);
 
-  // Handle preflight OPTIONS request
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
+// POST /api/post_exp
+app.post("/api/post_exp", (req, res) => {
+  const { company, role, startDate, endDate, description } = req.body;
+  if (!company || !role || !startDate) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
+  const newExperience = {
+    id: experiences.length + 1,
+    company,
+    role,
+    startDate,
+    endDate: endDate || "",
+    description: description || "",
+    hash: generateMockHash(),
+  };
+  experiences.push(newExperience);
+  console.log("New experience added:", newExperience);
+  res.status(201).json(newExperience);
+});
 
-  // Parse URL and body
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  let body = "";
-  req.on("data", (chunk) => {
-    body += chunk;
-  });
+// GET /api/get_all_exp
+app.get("/api/get_all_exp", (req, res) => {
+  console.log("Returning all experiences:", experiences);
+  res.json(experiences);
+});
 
-  req.on("end", () => {
-    let jsonBody = {};
-    if (body && req.headers["content-type"] === "application/json") {
-      try {
-        jsonBody = JSON.parse(body);
-        console.log("Body:", jsonBody);
-      } catch (error) {
-        console.error("Error parsing JSON:", error.message);
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Invalid JSON" }));
-        return;
-      }
-    }
+// GET /api/get_all_request_exp
+app.get("/api/get_all_request_exp", (req, res) => {
+  console.log("Returning certification requests:", certificationRequests);
+  res.json(certificationRequests);
+});
 
-    // Handle routes
-    try {
-      if (req.method === "POST" && url.pathname === "/api/post_exp") {
-        const { company, role, startDate, endDate, description } = jsonBody;
-        if (!company || !role || !startDate) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing required fields" }));
-          return;
-        }
-        const newExperience = {
-          id: experiences.length + 1,
-          company,
-          role,
-          startDate,
-          endDate: endDate || "",
-          description: description || "",
-          hash: generateMockHash(),
-        };
-        experiences.push(newExperience);
-        console.log("New experience added:", newExperience);
-        res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(newExperience));
-      } else if (req.method === "GET" && url.pathname === "/api/get_all_exp") {
-        console.log("Returning all experiences:", experiences);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(experiences));
-      } else if (req.method === "GET" && url.pathname === "/api/get_all_request_exp") {
-        console.log("Returning certification requests:", certificationRequests);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(certificationRequests));
-      } else if (req.method === "POST" && url.pathname === "/api/post_exp_cert") {
-        const { id, isApproved } = jsonBody;
-        if (!id || typeof isApproved !== "boolean") {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing or invalid fields" }));
-          return;
-        }
-        const requestIndex = certificationRequests.findIndex((req) => req.id === id);
-        if (requestIndex === -1) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Request not found" }));
-          return;
-        }
-        if (isApproved) {
-          const request = certificationRequests[requestIndex];
-          experiences.push({ ...request, id: experiences.length + 1, hash: generateMockHash() });
-          console.log("Experience approved and added:", request);
-        }
-        certificationRequests.splice(requestIndex, 1);
-        console.log(`Certification ${isApproved ? "approved" : "rejected"} for id: ${id}`);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ success: true }));
-      } else if (req.method === "POST" && url.pathname === "/api/check") {
-        const { hash } = jsonBody;
-        if (!hash) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing hash" }));
-          return;
-        }
-        const result = verificationResults[hash] || { valid: false };
-        console.log(`Verification result for hash ${hash}:`, result);
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(result));
-      } else {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Not found" }));
-      }
-    } catch (error) {
-      console.error(`Error handling ${req.method} ${url.pathname}:`, error.message);
-      res.writeHead(500, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Internal server error" }));
-    }
-  });
+// POST /api/post_exp_cert
+app.post("/api/post_exp_cert", (req, res) => {
+  const { id, isApproved } = req.body;
+  if (!id || typeof isApproved !== "boolean") {
+    return res.status(400).json({ error: "Missing or invalid fields" });
+  }
+  const requestIndex = certificationRequests.findIndex((req) => req.id === id);
+  if (requestIndex === -1) {
+    return res.status(404).json({ error: "Request not found" });
+  }
+  if (isApproved) {
+    const request = certificationRequests[requestIndex];
+    experiences.push({ ...request, id: experiences.length + 1, hash: generateMockHash() });
+    console.log("Experience approved and added:", request);
+  }
+  certificationRequests.splice(requestIndex, 1);
+  console.log(`Certification ${isApproved ? "approved" : "rejected"} for id: ${id}`);
+  res.json({ success: true });
+});
+
+// POST /api/check
+app.post("/api/check", (req, res) => {
+  const { hash } = req.body;
+  if (!hash) {
+    return res.status(400).json({ error: "Missing hash" });
+  }
+  const result = verificationResults[hash] || { valid: false };
+  console.log(`Verification result for hash ${hash}:`, result);
+  res.json(result);
 });
 
 // Start server
-const PORT = 5000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
