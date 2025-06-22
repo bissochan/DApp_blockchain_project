@@ -56,3 +56,22 @@ To preview the production build locally:
 ```sh
 npm run preview
 ```
+
+---
+---
+
+# Blockchain Setup
+
+```sh
+cd blockchain_folder
+npm init -y
+npm install --save-dev hardhat
+npx hardhat compile
+npx hardhat node
+```
+On another terminal, deploy the contract:
+
+```sh
+cd blockchain_folder
+npx hardhat run scripts/deploy.js --network localhost
+```
