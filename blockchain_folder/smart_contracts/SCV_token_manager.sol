@@ -21,6 +21,7 @@ interface IERC20 {
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
+    event IncreaseTotalSupply(uint256 amount);
 }
 
 contract SCV_token_manager is IERC20, IToken {
@@ -96,11 +97,16 @@ contract SCV_token_manager is IERC20, IToken {
     }
 
     function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
-        require(to != address(0), "Invalid address");
-        require(allowed[from][msg.sender] >= amount, "Not allowed");
+        require(from != address(0), "Invalid from address");
+        require(to != address(0), "Invalid to address");
+        require(msg.sender == owner || allowed[from][msg.sender] >= amount, "Not authorized");
         require(balances[from] >= amount, "Insufficient balance");
 
-        allowed[from][msg.sender] -= amount;
+        if (msg.sender != owner) {
+            allowed[from][msg.sender] -= amount;
+            emit Approval(from, msg.sender, allowed[from][msg.sender]);
+        }
+
         _transfer(from, to, amount);
         return true;
     }
@@ -122,7 +128,7 @@ contract SCV_token_manager is IERC20, IToken {
         balances[_account] += _amount;
 
         emit Mint(_account, _amount);
-        emit Transfer(address(0), _account, _amount);
+        emit IncreaseTotalSupply(totalSupply_);
         return true;
     }
 
@@ -140,4 +146,5 @@ contract SCV_token_manager is IERC20, IToken {
     }
 
     event Burn(uint256 amount);
+    event DecreaseTotalSupply(uint256 amount);
 }

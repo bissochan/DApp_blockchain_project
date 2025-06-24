@@ -10,12 +10,17 @@ interface ISCV_UI_manager {
     function setStorageManager(address _storageManagerAddress) external returns (bool);
     function isWhitelisted(address _entity) external view returns (bool);
     function getCertificateInfo(string memory _certificateHash) external returns (bool, string memory);
+    function getCertificateInfoView(string memory _certificateHash) external view returns (bool, string memory);
+    function getAllCertificates() external view returns (string memory);
+    function getUserTokenBalance(address _user) external view returns (uint256);
     function setTokenManager(address _tokenManagerAddress) external returns (bool);
     function storeCertificate(
         address _entity,
         string memory _certificateHash,
         string memory _ipfsCid
     ) external returns (bool);
+    function transferTokens(address _to, uint256 _amount) external returns (bool);
+    function buyTokens() external payable returns (bool);
 }
 
 contract SCV_UI_manager is ISCV_UI_manager {
@@ -26,11 +31,13 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
     // Constants for token rewards
     // These values can be adjusted based on the system's requirements
-    uint256 public constant TOKEN_PER_REWARD = 10; // Example token reward for storing a certificate
-    uint256 public constant TOKEN_PER_LOOKUP = 5; // Example token reward for each lookup
+    uint256 public constant TOKEN_PER_REWARD = 20; // Example token reward for storing a certificate
+    uint256 public constant TOKEN_PER_LOOKUP = 10; // Example token reward for each lookup
     uint256 public constant TOKEN_INITIAL_SUPPLY = 1000000; // Initial token supply for the contract
     uint256 public constant TOKEN_INITIAL_PER_USER = 40; // Initial token balance for the users
     uint256 public constant TOKEN_PER_ETHER = 10000; // Example token reward for each ether sent to the contract
+    uint256 public constant TOKEN_PER_ETHER_MIN = 0.01 ether; // Minimum ether to buy tokens
+    uint256 public constant TOKEN_INCREASE_SUPPLY_OF = 1000; // Amount of tokens to increase supply by
 
     mapping(address => bool) public _certifiedWhitelisted;
 
@@ -47,6 +54,19 @@ contract SCV_UI_manager is ISCV_UI_manager {
         address indexed entity,
         string certificateHash,
         string ipfsCid
+    );
+    event TokensRewarded(
+        address indexed entity,
+        uint256 amount
+    );
+    event TokensTransferred(
+        address indexed from,
+        address indexed to,
+        uint256 amount
+    );
+    event TokensMinted(
+        address indexed entity,
+        uint256 amount
     );
 
     // === Constructor ===
@@ -156,11 +176,26 @@ contract SCV_UI_manager is ISCV_UI_manager {
             _certificateHash
         );
 
+        require(certId > 0, "Certificate storage failed");
+
         emit CertificateStored(_entity, originalCertificateHash, _ipfsCid);
 
         // Reward the entity with tokens for storing the certificate
         if (address(tokenManager) != address(0)) {
-            tokenManager.mint(_entity, TOKEN_PER_REWARD);
+
+            try  tokenManager.mint(_entity, TOKEN_PER_REWARD) {
+                // Successfully minted tokens
+                emit TokensRewarded(_entity, TOKEN_PER_REWARD);
+            } catch {
+                // Handle minting failure (e.g., insufficient balance)
+                revert("Token minting failed");
+                
+            } 
+
+            // emit TokensRewarded(
+            //     _entity,
+            //     TOKEN_PER_REWARD
+            // );
         }
 
         return true;
@@ -194,6 +229,32 @@ contract SCV_UI_manager is ISCV_UI_manager {
        
 
         return storageManager.getCertificateInfoByHash(_certificateHash);
+    }
+
+    // view function for the certificate hash stored in the contract, onlyOwner
+    function getCertificateInfoView(
+        string memory _certificateHash
+    ) external view onlyOwner returns (bool, string memory) {
+        // Convert string to bytes32 for consistency with storage manager
+        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
+        require(_certificateHash != bytes32(0), "Invalid certificate hash");
+        
+        return storageManager.getCertificateInfoByHash(_certificateHash);
+    }
+
+    // function see all certificates stored in the contract, onlyOwner
+    function getAllCertificates() external view onlyOwner returns (string memory) {
+        // This function should return all certificate hashes stored in the storage manager
+        // Assuming the storage manager has a function to get all certificates
+        // This is a placeholder, actual implementation may vary based on storage manager design
+        return storageManager.getAllCertificates();
+    }
+
+    function getNumCertificates() external view onlyOwner returns (uint256) {
+        // This function should return the number of certificates stored in the storage manager
+        // Assuming the storage manager has a function to get the number of certificates
+        // This is a placeholder, actual implementation may vary based on storage manager design
+        return storageManager.getCertificateCount();
     }
 
     // === managing Users Tokens ===
@@ -236,9 +297,28 @@ contract SCV_UI_manager is ISCV_UI_manager {
         require(address(tokenManager) != address(0), "Token manager not set");
 
         // Calculate the number of tokens to mint based on the ether sent
-        uint256 tokensToMint = (msg.value * TOKEN_PER_ETHER) / 1 ether;
+        // TODO: control overflows
+        require(
+            (msg.value * TOKEN_PER_ETHER) / 1 ether > 0,
+            "Insufficient ether sent to buy tokens"
+        );
+        uint256 tokensToTransfer = (msg.value * TOKEN_PER_ETHER) / 1 ether;
 
-        // Mint tokens for the sender
-        return tokenManager.mint(msg.sender, tokensToMint);
+        // Transfer tokens from the contract to the user
+        if (tokenManager.balanceOf(address(this)) <= tokensToTransfer) {
+            // Mint tokens for this contract so that the total supply increases
+            tokenManager.mint(address(this), tokensToTransfer + TOKEN_INCREASE_SUPPLY_OF);
+            emit TokensMinted(address(this), tokensToTransfer + TOKEN_INCREASE_SUPPLY_OF);
+        } 
+
+        // Transfer tokens to the user
+        require(
+            tokenManager.transfer(msg.sender, tokensToTransfer),
+            "Token transfer failed"
+        );
+
+        // Emit an event for the token purchase
+        emit TokensTransferred(address(this), msg.sender, tokensToTransfer);
+        return true;
     }
 }
