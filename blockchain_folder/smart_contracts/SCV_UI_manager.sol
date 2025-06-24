@@ -24,6 +24,13 @@ contract SCV_UI_manager is ISCV_UI_manager {
     ISCVStorageManager public storageManager;
     TokenSCV public tokenManager; // Placeholder for future token manager integration
 
+    // Constants for token rewards
+    // These values can be adjusted based on the system's requirements
+    uint256 public constant TOKEN_PER_REWARD = 10; // Example token reward for storing a certificate
+    uint256 public constant TOKEN_PER_LOOKUP = 5; // Example token reward for each lookup
+    uint256 public constant TOKEN_INITIAL_PER_USER = 40; // Initial token balance for the users
+    uint256 public constant TOKEN_PER_ETHER = 10000; // Example token reward for each ether sent to the contract
+
     mapping(address => bool) public _certifiedWhitelisted;
 
     // === Events ===
@@ -134,6 +141,12 @@ contract SCV_UI_manager is ISCV_UI_manager {
         );
 
         emit CertificateStored(_entity, _certificateHash, _ipfsCid);
+
+        // Reward the entity with tokens for storing the certificate
+        if (address(tokenManager) != address(0)) {
+            tokenManager.mint(_entity, TOKEN_PER_REWARD);
+        }
+
         return true;
     }
 
@@ -146,6 +159,19 @@ contract SCV_UI_manager is ISCV_UI_manager {
     function getCertificateInfo(
         bytes32 _certificateHash
     ) external view storageManagerSet returns (bool, string memory) {
+        // Ensure the storage manager is set before querying
+        require(address(storageManager) != address(0), "Storage manager not set");
+
+        // the caller must pay a small fee in tokens for the lookup
+        if (address(tokenManager) != address(0)) {
+            require(
+                tokenManager.balanceOf(msg.sender) >= TOKEN_PER_LOOKUP,
+                "Insufficient tokens for lookup"
+            );
+            // send tokens to the contract
+            tokenManager.transferFrom(msg.sender, address(this), TOKEN_PER_LOOKUP);
+        }
+
         return storageManager.getCertificateInfoByHash(_certificateHash);
     }
 }
