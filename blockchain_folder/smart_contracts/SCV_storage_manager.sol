@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 // This contract would manage our main system
 
 pragma solidity >=0.8.2 <0.9.0;
