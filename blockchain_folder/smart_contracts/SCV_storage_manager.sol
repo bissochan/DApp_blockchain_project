@@ -11,14 +11,14 @@ interface ISCVStorageManager {
 
 contract SCV_storage_manager is ISCVStorageManager {
     // Manager address (e.g., SCV_UI_manager)
-    address public managerAddress;
+    address public owner;
 
     constructor(address _manager) {
-        managerAddress = _manager;
+        owner = _manager;
     }
 
-    modifier onlyManager() {
-        require(msg.sender == managerAddress, "Not authorized");
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not authorized");
         _;
     }
 
@@ -30,7 +30,10 @@ contract SCV_storage_manager is ISCVStorageManager {
 
     mapping(bytes32 => CertificateInfo) private certificateList;
 
-    function addCertificate(string memory _cid, bytes32 _certHash) public onlyManager returns (uint256) {
+    // Event emitted when a certificate is stored
+    event CertificateStored(string cid, bytes32 certHash, uint256 timestamp);
+
+    function addCertificate(string memory _cid, bytes32 _certHash) public onlyOwner returns (uint256) {
         // validate CID
         require(bytes(_cid).length > 0, "Invalid CID");
 
@@ -45,12 +48,15 @@ contract SCV_storage_manager is ISCVStorageManager {
 
         certificateList[_certHash] = newCert;
 
+        // Emit an event for certificate storage (optional, but recommended)
+        emit CertificateStored(_cid, _certHash, block.timestamp);
+
         // TODO checks this implementation
         // Return a pseudo ID (e.g., hash of CID % 256)
         return uint256(keccak256(abi.encodePacked(_cid))) % 256;
     }
 
-    function getCertificateInfoByHash(bytes32 _certHash) public view onlyManager returns (bool, string memory) {
+    function getCertificateInfoByHash(bytes32 _certHash) public view onlyOwner returns (bool, string memory) {
         CertificateInfo storage cert = certificateList[_certHash];
         if (cert.timestamp == 0) {
             return (false, "");

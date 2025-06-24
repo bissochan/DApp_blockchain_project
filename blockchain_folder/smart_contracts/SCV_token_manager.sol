@@ -23,7 +23,7 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
-contract TokenSCV is IERC20, IToken {
+contract SCV_token_manager is IERC20, IToken {
     address public owner;
 
     mapping(address => uint256) private balances;
@@ -33,14 +33,15 @@ contract TokenSCV is IERC20, IToken {
     string private _symbol;
     uint8 private _decimals;
 
-    constructor(string memory name_, string memory symbol_, uint8 decimals_, uint256 initialSupply_) {
+    constructor(string memory name_, string memory symbol_, uint8 decimals_, uint256 initialSupply_, address initialOwner_) {
         require(decimals_ <= 18, "Too many decimals");
-        owner = msg.sender;
+        owner = initialOwner_;
         _name = name_;
         _symbol = symbol_;
         _decimals = decimals_;
-        totalSupply_ = initialSupply_;
-        balances[owner] = initialSupply_;
+        totalSupply_ = initialSupply_ * (10 ** uint256(decimals_)); // Adjusting for decimals
+        require(totalSupply_ > 0, "Initial supply must be greater than 0");
+        balances[owner] = totalSupply_;
 
         emit Transfer(address(0), owner, initialSupply_);
     }

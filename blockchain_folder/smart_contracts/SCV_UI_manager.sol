@@ -9,11 +9,11 @@ interface ISCV_UI_manager {
     function removeWhiteListEntity(address _entity) external returns (bool);
     function setStorageManager(address _storageManagerAddress) external returns (bool);
     function isWhitelisted(address _entity) external view returns (bool);
-    function getCertificateInfo(bytes32 _certificateHash) external view returns (bool, string memory);
+    function getCertificateInfo(string memory _certificateHash) external returns (bool, string memory);
     function setTokenManager(address _tokenManagerAddress) external returns (bool);
     function storeCertificate(
         address _entity,
-        bytes32 _certificateHash,
+        string memory _certificateHash,
         string memory _ipfsCid
     ) external returns (bool);
 }
@@ -22,12 +22,13 @@ contract SCV_UI_manager is ISCV_UI_manager {
     // === State Variables ===
     address public owner;
     ISCVStorageManager public storageManager;
-    TokenSCV public tokenManager; // Placeholder for future token manager integration
+    SCV_token_manager public tokenManager; // Placeholder for future token manager integration
 
     // Constants for token rewards
     // These values can be adjusted based on the system's requirements
     uint256 public constant TOKEN_PER_REWARD = 10; // Example token reward for storing a certificate
     uint256 public constant TOKEN_PER_LOOKUP = 5; // Example token reward for each lookup
+    uint256 public constant TOKEN_INITIAL_SUPPLY = 1000000; // Initial token supply for the contract
     uint256 public constant TOKEN_INITIAL_PER_USER = 40; // Initial token balance for the users
     uint256 public constant TOKEN_PER_ETHER = 10000; // Example token reward for each ether sent to the contract
 
@@ -39,7 +40,12 @@ contract SCV_UI_manager is ISCV_UI_manager {
     event StorageManagerUpdated(address indexed newStorageManager);
     event CertificateStored(
         address indexed entity,
-        bytes32 certificateHash,
+        string certificateHash,
+        string ipfsCid
+    );
+    event CertificateLookup(
+        address indexed entity,
+        string certificateHash,
         string ipfsCid
     );
 
@@ -58,12 +64,12 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
     // === Modifiers ===
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        require(msg.sender == owner, "Only owner: not authorized");
         _;
     }
 
     modifier onlyWhitelistedEntity() {
-        require(_certifiedWhitelisted[msg.sender], "Not a certified entity");
+        require(_certifiedWhitelisted[msg.sender], "Only whitelisted entity: not authorized");
         _;
     }
 
@@ -76,6 +82,11 @@ contract SCV_UI_manager is ISCV_UI_manager {
     }
 
     // === Whitelist Management ===
+    function certifiedWhitelisted(
+        address _entity
+    ) external view returns (bool) {
+        return _certifiedWhitelisted[_entity];
+    }
     function addWhiteListEntity( 
         address _entity
     ) external onlyOwner returns (bool) {
@@ -120,16 +131,21 @@ contract SCV_UI_manager is ISCV_UI_manager {
             "Invalid token manager address"
         );
 
-        tokenManager = TokenSCV(_tokenManagerAddress);
-        return true;
+        tokenManager = SCV_token_manager(_tokenManagerAddress);
+        return false;
     }
 
     // === Certificate Publishing ===
     function storeCertificate(
         address _entity,
-        bytes32 _certificateHash,
+        string memory _certificateHash,
         string memory _ipfsCid
     ) public onlyWhitelistedEntity storageManagerSet returns (bool) {
+        string memory originalCertificateHash = _certificateHash;
+
+        // Convert string to bytes32 for consistency with storage manager
+        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
+
         require(_entity == msg.sender, "Entity mismatch");
         require(bytes(_ipfsCid).length > 0, "Empty CID");
         require(_certificateHash != bytes32(0), "Invalid hash");
@@ -140,7 +156,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
             _certificateHash
         );
 
-        emit CertificateStored(_entity, _certificateHash, _ipfsCid);
+        emit CertificateStored(_entity, originalCertificateHash, _ipfsCid);
 
         // Reward the entity with tokens for storing the certificate
         if (address(tokenManager) != address(0)) {
@@ -157,21 +173,72 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
     // === Certificate Query Functions ===
     function getCertificateInfo(
-        bytes32 _certificateHash
-    ) external view storageManagerSet returns (bool, string memory) {
+        string memory _certificateHash
+    ) external storageManagerSet returns (bool, string memory) {
+        // Convert string to bytes32 for consistency with storage manager
+        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
+
         // Ensure the storage manager is set before querying
         require(address(storageManager) != address(0), "Storage manager not set");
-
-        // the caller must pay a small fee in tokens for the lookup
-        if (address(tokenManager) != address(0)) {
-            require(
+        require(_certificateHash != bytes32(0), "Invalid certificate hash");
+        
+        // Check if the token manager is set and if the user has enough tokens
+        require(address(tokenManager) != address(0), "Token manager not set");
+        // Check if the user has enough tokens for the lookup
+        require(
                 tokenManager.balanceOf(msg.sender) >= TOKEN_PER_LOOKUP,
                 "Insufficient tokens for lookup"
-            );
-            // send tokens to the contract
-            tokenManager.transferFrom(msg.sender, address(this), TOKEN_PER_LOOKUP);
-        }
+        );
+        // send tokens to the contract
+        tokenManager.transferFrom(msg.sender, address(this), TOKEN_PER_LOOKUP);
+       
 
         return storageManager.getCertificateInfoByHash(_certificateHash);
+    }
+
+    // === managing Users Tokens ===
+    function getUserTokenBalance(address _user) external view returns (uint256) {
+        require(address(tokenManager) != address(0), "Token manager not set");
+        return tokenManager.balanceOf(_user);
+    }
+
+    function newUser(
+        address _user
+    ) external onlyOwner returns (bool) {
+        require(_user != address(0), "Invalid user address");
+        require(
+            tokenManager.balanceOf(_user) == 0,
+            "User already has tokens"
+        );
+
+        // Mint initial tokens for the new user
+        return tokenManager.mint(_user, TOKEN_INITIAL_PER_USER);
+    }
+
+    // should be used to transfer tokens from the contract to the user
+    // this function can be used by the contract owner to transfer tokens to users
+    function transferTokens(
+        address _to,
+        uint256 _amount
+    ) external returns (bool) {
+        require(_to != address(0), "Invalid recipient address");
+        require(
+            tokenManager.balanceOf(msg.sender) >= _amount,
+            "Insufficient token balance"
+        );
+
+        return tokenManager.transfer(_to, _amount);
+    }
+
+    // buy tokens with ether
+    function buyTokens() external payable returns (bool) {
+        require(msg.value > 0, "Send some ether to buy tokens");
+        require(address(tokenManager) != address(0), "Token manager not set");
+
+        // Calculate the number of tokens to mint based on the ether sent
+        uint256 tokensToMint = (msg.value * TOKEN_PER_ETHER) / 1 ether;
+
+        // Mint tokens for the sender
+        return tokenManager.mint(msg.sender, tokensToMint);
     }
 }
