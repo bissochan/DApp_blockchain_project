@@ -82,12 +82,9 @@ contract SCV_storage_manager is ISCVStorageManager {
 
     function getCertificateInfoByHash(bytes32 _certHash) public view onlyOwner returns (bool, string memory) {
         CertificateInfo storage cert = certificateList[_certHash];
-        if (cert.timestamp == 0) {
-            return (false, "");
-        }
-        if (bytes(cert.ipfsCid).length == 0) {
-            return (false, "Certificate CID is empty");
-        }
+        require(cert.timestamp > 0, "Certificate not found");
+        require(bytes(cert.ipfsCid).length > 0, "Certificate CID is empty");
+        require(cert.certificateHash != bytes32(0), "Certificate hash is empty");
 
         // Validate timestamp to avoid edge cases (optional)
         require(cert.timestamp > 0, "Invalid timestamp");

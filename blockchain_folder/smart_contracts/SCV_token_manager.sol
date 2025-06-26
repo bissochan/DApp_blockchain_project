@@ -18,6 +18,7 @@ interface IERC20 {
     function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 value) external returns (bool);
     function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function burn(address account, uint256 amount) external returns (bool);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -134,17 +135,18 @@ contract SCV_token_manager is IERC20, IToken {
 
     // ========================= Burning ========================= //
 
-    function burn(uint256 _amount) external onlyOwner {
-        require(_amount > 0, "Amount must be > 0");
-        require(balances[msg.sender] >= _amount, "Insufficient balance");
+    function burn(address account, uint256 amount) external override onlyOwner returns (bool) {
+        require(account != address(0), "Invalid address");
+        require(balances[account] >= amount, "Insufficient balance");
 
-        balances[msg.sender] -= _amount;
-        totalSupply_ -= _amount;
+        balances[account] -= amount;
+        totalSupply_ -= amount;
 
-        emit Burn(_amount);
-        emit Transfer(msg.sender, address(0), _amount);
+        emit Burn(amount);
+        emit DecreaseTotalSupply(totalSupply_);
+        return true;
     }
-
+    
     event Burn(uint256 amount);
     event DecreaseTotalSupply(uint256 amount);
 }

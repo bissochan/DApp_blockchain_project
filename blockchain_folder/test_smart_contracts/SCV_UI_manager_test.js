@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect, use } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("SCV_UI_manager", function () {
@@ -305,36 +305,6 @@ describe("Access Control", function () {
             expect(user1BalanceAfter).to.equal(user1BalanceBefore + expectedTokens, "User1 balance did not increase by the expected amount of tokens");
         });
 
-        // it("should allow user to buy tokens with ether", async function () {
-        //     const userBalanceBefore = await tokenManager.balanceOf(user1.address);
-
-        //     const contractBalanceBefore = await ethers.provider.getBalance(await uiManager.getAddress());
-
-        //     const etherToSend = 1.0; // 1 ether
-
-        //     const tokensPerEther = 10000n; // Assuming 10 tokens per ether, adjust as per your contract logic
-
-        //     // User buys tokens
-        //     await uiManager.connect(user1).buyTokens({ value: ethers.parseEther(etherToSend.toString()) });
-
-        //     // Calculate expected tokens to be minted
-        //     const expectedTokens = BigInt(etherToSend) * tokensPerEther;
-
-        //     // Check if the user balance increased by the expected amount
-        //     const userBalanceAfter = await tokenManager.balanceOf(user1.address);
-
-        //     expect(userBalanceAfter).to.equal(userBalanceBefore + expectedTokens);
-
-        //     // Optionally, check if the contract's balance increased
-        //     const contractBalanceAfter = await ethers.provider.getBalance(await uiManager.getAddress());
-
-        //     console.log("Contract Balance Before:", contractBalanceBefore.toString());
-        //     console.log("Contract Balance After:", contractBalanceAfter.toString());
-        //     console.log("Ether Sent:", ethers.parseEther(etherToSend.toString()).toString());
-
-        //     expect(contractBalanceAfter).to.equal(contractBalanceBefore + ethers.parseEther(etherToSend.toString()));
-        // });
-
         it("should not allow buying tokens with zero ether", async function () {
             await expect(
                 uiManager.connect(user1).buyTokens({ value: 0 })
@@ -430,5 +400,275 @@ describe("Access Control", function () {
             );
 
         });
+
+        it("should not allow querying certificate info without enough tokens", async function () {
+            const certificateHash = "Test Certificate 3";
+            const ipfsCid = "QmTestCID3";
+
+            // Ensure user2 is whitelisted
+            if (await uiManager.certifiedWhitelisted(user2.address) === false) {
+                await uiManager.addWhiteListEntity(user2.address);
+                expect(await uiManager.certifiedWhitelisted(user2.address)).to.be.true;
+            }
+
+            // Store a certificate first
+            await uiManager.connect(user2).storeCertificate(user2.address, certificateHash, ipfsCid);
+
+            // Ensure user2 has less than TOKEN_PER_LOOKUP tokens
+            const user2BalanceBefore = await tokenManager.balanceOf(user2.address);
+
+            // if it has more than 10 tokens, burn some tokens for testing
+            if (user2BalanceBefore >= 10n) {
+                await uiManager.connect(owner).burnUserTokens(user2.address, 20n); // Burn 10 tokens for testing    
+            }
+
+            // Attempt to query the certificate info without enough tokens
+            await expect(
+                uiManager.connect(user2).getCertificateInfo(certificateHash)
+            ).to.be.revertedWith("Insufficient tokens for lookup");
+        });
+
+        it ("should not allow querying non-existent certificate info", async function () {
+            const nonExistentCertificateHash = "NonExistentCertificate";
+
+            // Ensure user1 has enough tokens
+            const user1BalanceBefore = await tokenManager.balanceOf(user1.address);
+
+            if (user1BalanceBefore < 10n) {
+                // If user1 has less than 10 tokens, mint more tokens for testing
+                await uiManager.connect(owner).mintUserTokens(user1.address, 20n); // Mint 20 tokens for testing
+            }
+
+            // //print getCertificateInfoView function
+            // const [exists, info] = await uiManager.getCertificateInfoView(nonExistentCertificateHash);
+            
+            // console.log("Certificate Exists:", exists);
+            // console.log("Certificate Info:", info);
+
+            // Attempt to query a non-existent certificate
+            await expect(
+                uiManager.connect(user1).getCertificateInfo(nonExistentCertificateHash)
+            ).to.be.revertedWith("Certificate not found");
+        });
     });
+
+    describe("Token Management", function () {
+        // Test for// === Token Management ===
+        // function mintUserTokens(
+        //     address _user,
+        //     uint256 _amount
+        // ) external onlyOwner returns (bool) {
+        //     require(_user != address(0), "Invalid address");
+        //     require(_amount > 0, "Amount must be greater than zero");
+
+        //     return tokenManager.mint(_user, _amount);
+        // }
+        it("should allow owner to mint tokens for a user", async function () {
+            const mintAmount = 100n; // Mint 100 tokens
+
+            const user1BalanceBefore = await tokenManager.balanceOf(user1.address);
+
+            await uiManager.connect(owner).mintUserTokens(user1.address, mintAmount);
+
+            const user1BalanceAfter = await tokenManager.balanceOf(user1.address);
+            expect(user1BalanceAfter).to.equal(user1BalanceBefore + mintAmount);
+        });
+
+        it("should not allow non-owner to mint tokens for a user", async function () {
+            const mintAmount = 100n; // Mint 100 tokens
+
+            await expect(
+                uiManager.connect(user1).mintUserTokens(user2.address, mintAmount)
+            ).to.be.revertedWith("Only owner: not authorized");
+        });
+
+        it("should not allow minting tokens to the zero address", async function () {
+            const mintAmount = 100n; // Mint 100 tokens
+
+            await expect(
+                uiManager.connect(owner).mintUserTokens(ethers.ZeroAddress, mintAmount)
+            ).to.be.revertedWith("Invalid address");
+        });
+
+        // Test for// function burnUserTokens(
+        //     address _user,
+        //     uint256 _amount
+        // ) external onlyOwner returns (bool) {
+        it("should allow owner to burn tokens from a user", async function () {
+            const burnAmount = 50n; // Burn 50 tokens
+
+            // Ensure user1 has enough tokens to burn
+            let user1BalanceBefore = await tokenManager.balanceOf(user1.address);
+            if (user1BalanceBefore < burnAmount) {
+                await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+            }
+            user1BalanceBefore = await tokenManager.balanceOf(user1.address); // Re-fetch balance after minting
+
+            await uiManager.connect(owner).burnUserTokens(user1.address, burnAmount);
+
+            const user1BalanceAfter = await tokenManager.balanceOf(user1.address);
+            expect(user1BalanceAfter).to.equal(user1BalanceBefore - burnAmount);
+        });
+
+        it("should not allow non-owner to burn tokens from a user", async function () {
+            const burnAmount = 50n; // Burn 50 tokens
+
+            // Ensure user2 has enough tokens to burn
+            const user2BalanceBefore = await tokenManager.balanceOf(user2.address);
+            if (user2BalanceBefore < burnAmount) {
+                await uiManager.connect(owner).mintUserTokens(user2.address, 100n); // Mint 100 tokens for testing
+            }
+
+            await expect(
+                uiManager.connect(user1).burnUserTokens(user2.address, burnAmount)
+            ).to.be.revertedWith("Only owner: not authorized");
+        });
+
+        it("should not allow burning tokens from the zero address", async function () {
+            const burnAmount = 50n; // Burn 50 tokens
+
+            await expect(
+                uiManager.connect(owner).burnUserTokens(ethers.ZeroAddress, burnAmount)
+            ).to.be.revertedWith("Invalid address");
+        });
+    });
+
+    describe("New User", function () {
+        // when a new user is added, it receives some tokens as a welcome gift
+        // function newUser(
+        //     address _user
+        // ) external onlyOwner returns (bool) {
+        //     require(_user != address(0), "Invalid user address");
+        //     require(
+        //         tokenManager.balanceOf(_user) == 0,
+        //         "User already has tokens"
+        //     );
+
+        //     // Mint initial tokens for the new user
+        //     return tokenManager.mint(_user, TOKEN_INITIAL_PER_USER);
+        // }
+        it("should allow owner to add a new user and mint initial tokens", async function () {
+            const newUserAddress = user2.address; // Use user2 as the new user
+
+            // Ensure user2 has no tokens before adding
+            const user2BalanceBefore = await tokenManager.balanceOf(newUserAddress);
+            expect(user2BalanceBefore).to.equal(0n);
+
+            // Add new user
+            await uiManager.connect(owner).newUser(newUserAddress);
+
+            // Check if the new user received initial tokens
+            const user2BalanceAfter = await tokenManager.balanceOf(newUserAddress);
+            expect(user2BalanceAfter).to.equal(100n * 10n ** 0n); // Assuming 100 tokens as initial per user
+        });
+
+        it("should not allow non-owner to add a new user", async function () {
+            const newUserAddress = user2.address; // Use user2 as the new user
+
+            await expect(
+                uiManager.connect(user1).newUser(newUserAddress)
+            ).to.be.revertedWith("Only owner: not authorized");
+        });
+
+        it("should not allow adding a new user with zero address", async function () {
+            await expect(
+                uiManager.connect(owner).newUser(ethers.ZeroAddress)
+            ).to.be.revertedWith("Invalid user address");
+        });
+
+        it("should not allow adding a user who already has tokens", async function () {
+            const newUserAddress = user1.address; // Use user1 as the new user
+
+            // Ensure user1 has some tokens before adding
+            const user1BalanceBefore = await tokenManager.balanceOf(newUserAddress);
+            if (user1BalanceBefore === 0n) {
+                await uiManager.connect(owner).newUser(newUserAddress); // Mint initial tokens for user1
+            }
+
+            // Attempt to add user1 again
+            await expect(
+                uiManager.connect(owner).newUser(newUserAddress)
+            ).to.be.revertedWith("User already has tokens");
+        });
+
+    });
+
+    describe("Storage Management", function () {
+        // function getAllCertificates() external view onlyOwner returns (string memory) {
+        //     // This function should return all certificate hashes stored in the storage manager
+        //     // Assuming the storage manager has a function to get all certificates
+        //     // This is a placeholder, actual implementation may vary based on storage manager design
+        //     return storageManager.getAllCertificates();
+        // }
+
+        it("should allow the owner to see all certificates if not empty", async function () {
+            // Ensure user1 is whitelisted and has stored a certificate
+            const certificateHash = "Test Certificate 4";
+            const ipfsCid = "QmTestCID4";
+
+            if (await uiManager.certifiedWhitelisted(user1.address) === false) {
+                await uiManager.addWhiteListEntity(user1.address);
+                expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
+            }
+            await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
+            // Call the function to get all certificates
+            const allCertificates = await uiManager.connect(owner).getAllCertificates();
+            // Check if the stored certificate is in the returned string
+            expect(allCertificates).to.include(ipfsCid);
+        });
+
+        it("should allow the owner to see all certificates if empty", async function () {
+            // Call the function to get all certificates when no certificates are stored
+            const allCertificates = await uiManager.connect(owner).getAllCertificates();
+            // Check if the returned string is empty or contains a specific message
+            expect(allCertificates).to.equal("No certificates found");
+        });
+
+        it("should not allow non-owner to see all certificates", async function () {
+            await expect(uiManager.connect(user1).getAllCertificates())
+                .to.be.revertedWith("Only owner: not authorized");
+        });
+
+        it("should allow the owner to get the number of certificates", async function () {
+            await expect(uiManager.connect(owner).getNumCertificates())
+                .to.not.be.reverted;
+        });
+
+        it("should not allow non-owner to get the number of certificates", async function () {
+            await expect(uiManager.connect(user1).getNumCertificates())
+                .to.be.revertedWith("Only owner: not authorized");
+        });
+
+        it("should allow the owner to get certificate info by Hash without paying token", async function () {
+            const certificateHash = "some_certificate_hash";
+
+            //publish a certificate first
+            const ipfsCid = "QmTestCID4";
+
+            // Ensure user1 is whitelisted
+            if (await uiManager.certifiedWhitelisted(user1.address) === false) {
+                await uiManager.addWhiteListEntity(user1.address);
+                expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
+            }
+
+            // Store certificate
+            await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
+
+            // Get certificate info without paying tokens
+            const [exists, info] = await uiManager.getCertificateInfoView(certificateHash);
+            expect(exists).to.be.true;
+            expect(info).to.include("Timestamp: ");
+            expect(info).to.include("Hash: ");
+            expect(info).to.include("CID: " + ipfsCid);
+        });
+
+        it("should not allow non-owner to get certificate info by Hash without paying token", async function () {
+            const certificateHash = "some_certificate_hash";
+
+            await expect(uiManager.connect(user1).getCertificateInfoView(certificateHash))
+                .to.be.revertedWith("Only owner: not authorized");
+        });
+
+    });
+
 });

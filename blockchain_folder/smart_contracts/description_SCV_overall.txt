@@ -1,23 +1,129 @@
-Information to be stored on the blockchain about SmartCVs (SCVs):
-- Certificate Hash
-- IPFS CID (Identifier to the complete information in IPFS)
-- timestamp
+Information to be stored on the blockchain about SmartCVs (SCVs) for the SmartCV project MVP:
+- Certificate Hash (passed as string)
+- IPFS CID (Identifier to the complete information in IPFS passed as string)
+- timestamp (generated in the chain)
+
+MAIN FUNCTION UI:
+- storeCertificate(address _entity, string _certificateHash, string _ipfsCid)
+- getCertificate(address _entity, string _certificateHash)
+- buyTokens(uint256 _amount)
 
 
-STORING FUNCTIONS:
-- takes as input the information 
-- check if address is part of whitelisted entity
-- store it on the chain
-- the contract itself pays the fee (in the complete application the ether to pay this comes from the subscriptions fees)
-- send token to the address (the entity certificator) sending the request
-- return true or error
+Function: storeCertificate(address _entity, string _certificateHash, string _ipfsCid)
+---------------------------------------------------------------------------------------
 
-TOKEN IMPLEMENTATION:
-- we develop a specific token that manage the reward and the payment for the verification
+Description:
+------------
+This function allows a whitelisted entity to store a certificate on-chain. 
+Upon successful storage, the entity is rewarded with tokens.
 
-VERIFICATION FUNCTIONS:
-- takes as input the certificate Hash
-- check if address is part of whitelisted entity
-- require a token payment
-- retrieve (if exist) the informations
-- return (hash, IPFS CID, timestamp) or error
+Key Steps:
+----------
+1. Validates that the sender is a whitelisted certifying entity.
+2. Checks that _entity matches msg.sender to avoid spoofing.
+3. Converts _certificateHash from string to bytes32.
+4. Stores the certificate via the StorageManager contract.
+5. Emits a CertificateStored event.
+6. Rewards the sender with tokens via the TokenManager contract.
+7. Returns true if successful.
+
+Requirements:
+-------------
+- The sender (msg.sender) must be whitelisted using addWhiteListEntity(address).
+- _ipfsCid must not be empty.
+- The TokenManager and StorageManager contracts must be properly connected:
+    - setStorageManager(address)
+    - setTokenManager(address)
+
+Usage Example (in tests or frontend):
+-------------------------------------
+await uiManager.setStorageManager(storageManager.address);
+await uiManager.setTokenManager(tokenManager.address);
+await uiManager.addWhiteListEntity(user1.address);
+
+const certificateHash = "certABC123";
+const ipfsCid = "QmExampleCIDxyz";
+
+await uiManager.connect(user1).storeCertificate(
+  user1.address,
+  certificateHash,
+  ipfsCid
+);
+
+Events Emitted:
+---------------
+- CertificateStored(address entity, string certificateHash, string ipfsCid)
+- TokensRewarded(address entity, uint256 amount)
+
+Return Value:
+-------------
+Returns true on success; otherwise reverts with an appropriate error.
+
+-------------------------------------------------------------------------------------
+
+Function: getCertificateInfo
+
+Purpose:
+---------
+This function retrieves the certificate information associated with a given certificate hash,
+while enforcing token-based access control.
+
+How It Works:
+--------------
+1. Accepts the certificate hash string as input.
+2. Hashes the input string using keccak256 for internal use.
+3. Verifies that the storageManager and tokenManager contracts are set.
+4. Checks whether the calling user has enough tokens to access the certificate (>= TOKEN_PER_LOOKUP).
+5. If so, it transfers the token fee from the user to the contract.
+6. Returns a tuple (exists: bool, ipfsCID: string) from the storageManager.
+
+Preconditions:
+---------------
+- The storageManager must be properly set via `setStorageManager(...)`.
+- The tokenManager must be properly set via `setTokenManager(...)`.
+- The user must hold at least TOKEN_PER_LOOKUP tokens and approve the contract to spend them.
+
+Usage:
+-------
+// In your JavaScript/Hardhat test or frontend:
+await tokenManager.connect(user).approve(uiManager.address, TOKEN_PER_LOOKUP);
+const [exists, cid] = await uiManager.connect(user).getCertificateInfo("cert1");
+
+Returns:
+--------
+- exists: boolean indicating if the certificate exists
+- ipfsCID: string containing the IPFS CID if certificate exists
+
+Note:
+-----
+If the user has insufficient tokens, the function will revert with the error:
+"Insufficient tokens for lookup"
+
+-----------------------------------------------------------------------------------------------
+
+function: buyTokens(uint256 _amount)
+
+Description:
+-----------
+This function allows users to purchase tokens from the TokenManager contract.
+Key Steps:
+-----------
+1. Validates that the TokenManager contract is set.
+2. Checks that the amount is greater than zero.
+3. Calls the buyTokens function in the TokenManager contract.
+4. Emits a TokensPurchased event.
+5. Returns true if the purchase is successful.
+
+Requirements:
+-------------
+- The TokenManager contract must be properly connected using setTokenManager(address).
+- The amount must be greater than zero.
+Usage Example (in tests or frontend):
+-------------------------------------
+await uiManager.setTokenManager(tokenManager.address);
+const amountToBuy = ethers.utils.parseEther("10"); // 10 tokens
+await uiManager.connect(user).buyTokens(amountToBuy);
+
+  
+Events Emitted:
+- TokensPurchased(address buyer, uint256 amount)
