@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getAllRequestExperiences, postExperienceCertification } from "../services/api";
 
 function CertificationForm() {
@@ -42,9 +42,11 @@ function CertificationForm() {
           {requests.map((req) => (
             <div key={req.id} className="border-b pb-2 flex justify-between items-center">
               <div>
-                <h3 className="font-semibold">{req.company}</h3>
+                <h3 className="font-semibold">CV certification required by: {req.username}</h3>
+                <p>{req.company}</p>
                 <p>{req.role}</p>
                 <p className="text-gray-600">{req.startDate} - {req.endDate}</p>
+                <p className="text-gray-600">{req.description}</p>
               </div>
               <div className="space-x-2">
                 <button

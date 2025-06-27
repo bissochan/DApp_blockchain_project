@@ -1,3 +1,4 @@
+import wallets from "./src/utils/wallets.js";
 // Simulates a simple in-memory database for user and CV data
 
 /* users structure:
@@ -9,6 +10,13 @@
 * }
 */
 export const users = [
+  {
+    id: "user0",
+    username: "demo_user",
+    role: "candidate",
+    walletAddress: wallets[1].address,
+    privateKey: wallets[1].privateKey
+  }
 ];
 
 /* companies structure:
@@ -23,6 +31,46 @@ export const users = [
 */
 
 export const companies = [
+  {
+    id: "company0",
+    username: "demo_company",
+    role: "company",
+    approved: false,
+    walletAddress: wallets[2].address,
+    privateKey: wallets[2].privateKey,
+    certificationRequests: []
+  }
+];
+
+
+/* pendingClaims structure:
+* {
+*  claimId: 'claim_1',
+*  claim: {
+*    userId: 1,
+*    companyId: 1,
+*    role: 'Job Role',
+*    startDate: 'YYYY-MM-DD',
+*    endDate: 'YYYY-MM-DD' | '',
+*    description: 'Job Description',
+*    timestamp: 'YYYY-MM-DDTHH:mm:ssZ'
+*  },
+*  userSignature: '0x...',
+*  status: 'pending' | 'approved' | 'rejected'
+* }
+*/
+export const pendingClaims = [
+];
+
+/* certificates structure:
+* {
+*  certificateHash: '0x...',
+*  cid: 'Qm...',
+*  userId: 1, // ID of the user who owns this certificate
+*  companyId: 1, // ID of the company that issued this certificate
+* }
+*/
+export const certificates = [
 ];
 
 /* experiences structure:
@@ -60,26 +108,32 @@ export const experiences = [
 /* experiences structure:
 * {
 *  id: 1,
+*  username: 'candidate1',
 *  company: 'Company Name',
 *  role: 'Job Role',
 *  startDate: 'YYYY-MM-DD',
 *  endDate: 'YYYY-MM-DD',
+*  description: 'Job Description',
 * }
 */
 export const certificationRequests = [
   {
     id: 3,
+    username: "candidate1",
     company: "Startup XYZ",
     role: "Ingegnere Blockchain",
     startDate: "2024-01-01",
     endDate: "",
+    description: "Sviluppo di smart contracts e soluzioni blockchain.",
   },
   {
     id: 4,
+    username: "candidate2",
     company: "HR Solutions",
     role: "Manager HR",
     startDate: "2023-03-01",
     endDate: "2023-09-30",
+    description: "Gestione delle risorse umane e sviluppo organizzativo.",
   },
 ];
 

@@ -18,7 +18,7 @@ export const getAllExperiences = () => API.get("/get_all_exp");
 
 // Certifier endpoints
 export const getAllRequestExperiences = () => API.get("/get_all_request_exp");
-export const postExperienceCertification = (data) => API.post("/post_exp_cert", data);
+export const postExperienceCertification = (data) => API.post("/store_certificate", data);
 
 // Verifier endpoint
 export const checkHash = (hash) => API.post("/check", { hash });
