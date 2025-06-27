@@ -76,6 +76,8 @@ router.post("/approve_claim", async (req, res) => {
 
   const claimEntry = pendingClaims.find(c => c.claimId === claimId);
   if (!claimEntry || claimEntry.status !== "pending") {
+    console.error("Claim not found or already processed:", claimId);
+    console.error("Claim entry:", claimEntry);
     return res.status(404).json({ error: "Claim not found or already processed" });
   }
 

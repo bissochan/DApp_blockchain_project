@@ -230,9 +230,13 @@ contract SCV_UI_manager is ISCV_UI_manager {
         );
         // send tokens to the contract
         tokenManager.transferFrom(msg.sender, address(this), TOKEN_PER_LOOKUP);
-       
 
-        return storageManager.getCertificateInfoByHash(_certificateHash);
+        (bool exists, string memory cid) = storageManager.getCertificateInfoByHash(_certificateHash);
+
+        // Emit the lookup result so the backend can capture it
+        emit CertificateLookup(msg.sender, string(abi.encodePacked(_certificateHash)), cid);
+
+        return (exists, cid);
     }
 
     // view function for the certificate hash stored in the contract, onlyOwner

@@ -5,6 +5,8 @@ import { masterWallet } from "./src/contracts/contract.js";
 import { ensureDefaultCompanyWhitelisted } from "./src/contracts/setup.js";
 import authRouter from "./src/routes/auth.js";
 import claimsRouter from "./src/routes/claims.js";
+import tokenRouter from "./src/routes/token.js";
+import verifyRouter from "./src/routes/verify.js";
 
 console.log("Master Wallet Address:", masterWallet.address);
 console.log("Master Private Key:", masterWallet.privateKey);
@@ -42,6 +44,15 @@ app.use("/api/auth", authRouter);
 // POST /api/claim/approve_claim     → Company approves a claim (on-chain)
 // POST /api/claim/reject_claim      → Company rejects a claim (off-chain only)
 app.use("/api/claim", claimsRouter);
+
+// Certificate Verification
+// POST /api/verify/verify_certificate → A verifier pays tokens to access and decrypt a certificate
+app.use("/api/verify", verifyRouter);
+
+// Token Management
+// GET  /api/token/balance             → Retrieves token balance for a user
+// POST /api/token/buy                 → Buys tokens by sending Ether (on-chain)
+app.use("/api/token", tokenRouter);
 
 
 // POST /api/post_exp

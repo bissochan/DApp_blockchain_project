@@ -15,7 +15,7 @@ export function enqueueTxForWallet(wallet, fnFactory) {
   const txPromise = queue.then(async () => {
     console.log(`→ Executing tx for wallet ${address}`);
 
-    const nonce = await provider.getTransactionCount(address, "pending");
+    const nonce = await provider.getTransactionCount(address, "latest");
     console.log("Current nonce:", nonce);
 
     const tx = await fnFactory(nonce);
