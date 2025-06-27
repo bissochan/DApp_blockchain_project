@@ -23,4 +23,5 @@ const UIManager = loadContract("SCV_UI_manager", deployed.UIManager);
 const TokenManager = loadContract("SCV_token_manager", deployed.TokenManager);
 const StorageManager = loadContract("SCV_storage_manager", deployed.StorageManager);
 
-export { masterWallet, StorageManager, TokenManager, UIManager };
+export { masterWallet, provider, StorageManager, TokenManager, UIManager };
+

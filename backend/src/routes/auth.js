@@ -1,14 +1,17 @@
 import express from "express";
 import { companies, users } from "../../database.js";
 import { masterWallet, UIManager } from "../contracts/contract.js";
-import { enqueueMasterTx } from "../contracts/txQueue.js";
+import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import wallets from "../utils/wallets.js";
 
 const router = express.Router();
 
+// Wallet index management
 let walletIndex = 1;
+let nextUserId = 1;
+let nextCompanyId = 1;
 
-// Function to take next wallet
+// Assign the next available wallet from preloaded ones
 function getNextWallet() {
   if (walletIndex >= wallets.length) {
     throw new Error("No more preassigned wallets available");
@@ -20,8 +23,7 @@ function getNextWallet() {
 
 /**
  * POST /api/auth/register/candidate
- * Register a candidate user.
- * Body: { username }
+ * Register a new candidate with username and assign wallet.
  */
 router.post("/register/candidate", (req, res) => {
   const { username } = req.body;
@@ -41,12 +43,13 @@ router.post("/register/candidate", (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
-  // Save wallet address and private key for your records (e.g., in your user DB)
+  // Store user and wallet info (simplified for MVP)
   users.push({
+    id: nextUserId++,
     username,
     role: "candidate",
     walletAddress: assignedWallet.address,
-    privateKey: assignedWallet.privateKey, // store securely!
+    privateKey: assignedWallet.privateKey, // Store securely in real applications
   });
 
   console.log("Candidate registered:", username);
@@ -58,9 +61,7 @@ router.post("/register/candidate", (req, res) => {
 
 /**
  * POST /api/auth/register/company
- * Register a company user.
- * Body: { username }
- * Note: company may need manual approval later.
+ * Register a new company and whitelist it on-chain.
  */
 router.post("/register/company", async (req, res) => {
   const { username } = req.body;
@@ -73,7 +74,7 @@ router.post("/register/company", async (req, res) => {
     return res.status(400).json({ error: "User already exists" });
   }
 
-  // In MVP checking of company existance is not implemented
+  // Wallet assignment (no company verification for MVP)
   let assignedWallet;
   try {
     assignedWallet = getNextWallet();
@@ -81,14 +82,16 @@ router.post("/register/company", async (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
+  // Check if already whitelisted (avoid double registration)
   const isWhitelisted = await UIManager.isWhitelisted(assignedWallet.address);
   if (isWhitelisted) {
     console.log("Company already whitelisted on-chain. Registration failed:", username);
     return res.status(400).json({ error: "Company already whitelisted on-chain" });
   }
 
+  // Whitelist on-chain using master wallet
   try {
-    await enqueueMasterTx((nonce) => {
+    await enqueueTxForWallet(masterWallet, (nonce) => {
       const uiManagerConnected = UIManager.connect(masterWallet);
       return uiManagerConnected.addWhiteListEntity(assignedWallet.address, { nonce });
     });
@@ -97,7 +100,9 @@ router.post("/register/company", async (req, res) => {
     return res.status(500).json({ error: "Failed to whitelist company", details: err.message });
   }
 
+  // Save company info off-chain
   companies.push({
+    id: nextCompanyId++,
     username,
     role: "company",
     approved: true,

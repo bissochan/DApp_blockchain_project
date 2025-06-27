@@ -1,34 +1,38 @@
-import { masterWallet } from "./contract.js";
+const queues = new Map();
 
-const provider = masterWallet.provider;
-if (!provider) {
-  throw new Error("masterWallet has no provider attached");
-}
+export function enqueueTxForWallet(wallet, fnFactory) {
+  const address = wallet.address.toLowerCase();
 
-let txQueue = Promise.resolve();
+  if (!queues.has(address)) {
+    queues.set(address, Promise.resolve());
+  }
 
-export function enqueueMasterTx(fnFactory) {
-  const txPromise = txQueue.then(async () => {
-    console.log("→ Executing transaction...");
+  const provider = wallet.provider;
+  if (!provider) throw new Error("Wallet has no provider");
 
-    const nonce = await provider.getTransactionCount(masterWallet.address, "latest");
+  const queue = queues.get(address);
+
+  const txPromise = queue.then(async () => {
+    console.log(`→ Executing tx for wallet ${address}`);
+
+    const nonce = await provider.getTransactionCount(address, "pending");
     console.log("Current nonce:", nonce);
 
     const tx = await fnFactory(nonce);
+    console.log("Transaction created:", tx.hash);
+
+    await provider.send("evm_mine", []);
     const receipt = await tx.wait();
 
-    if (receipt.status !== 1) {
-      console.error("✖ Transaction failed with status:", receipt.status);
-      throw new Error("Transaction failed");
+    if (!receipt || receipt.status !== 1) {
+      throw new Error("Transaction failed or not mined");
     }
 
-    console.log("✓ Transaction successful:", receipt.hash);
+    console.log("✓ Tx successful:", receipt.hash);
     return receipt;
   });
 
-  txQueue = txPromise.catch((err) => {
-    console.warn("⚠ Transaction in queue failed:", err.message);
-  });
+  queues.set(address, txPromise.catch(() => {})); // Catch per evitare blocchi futuri
 
   return txPromise;
 }

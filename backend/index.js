@@ -2,11 +2,14 @@ import cors from "cors";
 import express from "express";
 import { certificationRequests, experiences, verificationResults } from "./database.js";
 import { masterWallet } from "./src/contracts/contract.js";
+import { ensureDefaultCompanyWhitelisted } from "./src/contracts/setup.js";
 import authRouter from "./src/routes/auth.js";
-import smartContractRouter from "./src/routes/smartContract.js";
+import claimsRouter from "./src/routes/claims.js";
 
 console.log("Master Wallet Address:", masterWallet.address);
 console.log("Master Private Key:", masterWallet.privateKey);
+
+ensureDefaultCompanyWhitelisted();
 
 const app = express();
 const PORT = 5000;
@@ -26,13 +29,20 @@ const generateMockHash = () => {
   return hash;
 };
 
-// Routes
+// === ROUTES ===
 
-// POST /api/auth/register/candidate or /company
+// Authentication & Registration
+// POST /api/auth/register/candidate → Register a new candidate
+// POST /api/auth/register/company   → Register a new company (also triggers on-chain whitelist)
 app.use("/api/auth", authRouter);
 
-// POST /api/smart_contract
-app.use("/api/smart_contract", smartContractRouter);
+// Claim Management
+// POST /api/claim/create_claim      → User creates a new claim
+// GET  /api/claim/pending/:companyId → Get pending claims for a company
+// POST /api/claim/approve_claim     → Company approves a claim (on-chain)
+// POST /api/claim/reject_claim      → Company rejects a claim (off-chain only)
+app.use("/api/claim", claimsRouter);
+
 
 // POST /api/post_exp
 app.post("/api/store_certificate", (req, res) => {

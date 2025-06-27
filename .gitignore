@@ -3,3 +3,4 @@ blockchain_folder/cache/
 blockchain_folder/coverage/
 blockchain_folder/node_modules/
 backend/node_modules/
+backend/fake_ipfs/
