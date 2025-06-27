@@ -29,8 +29,11 @@ async function main() {
   await tokenManager.waitForDeployment(); // Updated for ethers v6
 
   // 4. Link contracts to UI Manager
-  await uiManager.setStorageManager(await storageManager.getAddress()); // Updated for ethers v6
-  await uiManager.setTokenManager(await tokenManager.getAddress()); // Updated for ethers v6
+  const tx = await uiManager.setStorageManager(await storageManager.getAddress()); // Updated for ethers v6
+  await tx.wait(); // Wait for the transaction to be mined
+
+  const tx2 = await uiManager.setTokenManager(await tokenManager.getAddress()); // Updated for ethers v6
+  await tx2.wait(); // Wait for the transaction to be mined
 
 
   const deployedInfo = {

@@ -25,7 +25,7 @@ const hardhatAccounts = wallets.length > 0
     privateKey: w.privateKey,
     balance: typeof w.balance === "string" && w.balance.length > 0
       ? w.balance
-      : "10000000000000000000", // Default balance of 10 ETH
+      : "1000000000000000000000", // Default balance of 1000 ETH
   }))
   : undefined;
 
@@ -41,7 +41,7 @@ module.exports = {
     hardhat: {
       mining: {
         auto: false,
-        interval: 1000, // Mine a block every second
+        interval: 10, // Mine a block every 10 millisecond
       },
       accounts: hardhatAccounts,
     },
