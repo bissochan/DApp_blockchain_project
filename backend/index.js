@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import { certificationRequests, experiences, verificationResults } from "./database.js";
 import { masterWallet } from "./src/contracts/contract.js";
 import authRouter from "./src/routes/auth.js";
 import smartContractRouter from "./src/routes/smartContract.js";
@@ -25,58 +26,6 @@ const generateMockHash = () => {
   return hash;
 };
 
-// Hardcoded data
-let experiences = [
-  {
-    id: 1,
-    company: "Tech Corp",
-    role: "Sviluppatore Frontend",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-    description: "Sviluppo di interfacce utente con React.",
-    hash: "0xabcdef1234567890abcdef1234567890abcdef12",
-  },
-  {
-    id: 2,
-    company: "Data Inc",
-    role: "Analista Dati",
-    startDate: "2022-06-01",
-    endDate: "2022-12-31",
-    description: "Analisi di dati aziendali con Python.",
-    hash: "0x1234567890abcdef1234567890abcdef12345678",
-  },
-];
-
-let certificationRequests = [
-  {
-    id: 3,
-    company: "Startup XYZ",
-    role: "Ingegnere Blockchain",
-    startDate: "2024-01-01",
-    endDate: "",
-  },
-  {
-    id: 4,
-    company: "HR Solutions",
-    role: "Manager HR",
-    startDate: "2023-03-01",
-    endDate: "2023-09-30",
-  },
-];
-
-const verificationResults = {
-  "0xabcdef1234567890abcdef1234567890abcdef12": {
-    valid: true,
-    company: "Tech Corp",
-    role: "Sviluppatore Frontend",
-    startDate: "2023-01-01",
-    endDate: "2023-12-31",
-  },
-  "0x5678": {
-    valid: false,
-  },
-};
-
 // Routes
 
 // POST /api/auth/register/candidate or /company
@@ -86,7 +35,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/smart_contract", smartContractRouter);
 
 // POST /api/post_exp
-app.post("/api/post_exp", (req, res) => {
+app.post("/api/store_certificate", (req, res) => {
   const { company, role, startDate, endDate, description } = req.body;
   if (!company || !role || !startDate) {
     return res.status(400).json({ error: "Missing required fields" });

@@ -1,4 +1,5 @@
 import express from "express";
+import { companies, users } from "../../database.js";
 import { masterWallet, UIManager } from "../contracts/contract.js";
 import { enqueueMasterTx } from "../contracts/txQueue.js";
 import wallets from "../utils/wallets.js";
@@ -6,9 +7,6 @@ import wallets from "../utils/wallets.js";
 const router = express.Router();
 
 let walletIndex = 1;
-
-// In-memory user "database" (MVP)
-const users = [];
 
 // Function to take next wallet
 function getNextWallet() {
@@ -23,13 +21,13 @@ function getNextWallet() {
 /**
  * POST /api/auth/register/candidate
  * Register a candidate user.
- * Body: { username, password }
+ * Body: { username }
  */
 router.post("/register/candidate", (req, res) => {
-  const { username, password } = req.body;
+  const { username } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "Missing username or password" });
+  if (!username) {
+    return res.status(400).json({ error: "Missing username" });
   }
 
   if (users.find((u) => u.username === username)) {
@@ -46,7 +44,6 @@ router.post("/register/candidate", (req, res) => {
   // Save wallet address and private key for your records (e.g., in your user DB)
   users.push({
     username,
-    password,
     role: "candidate",
     walletAddress: assignedWallet.address,
     privateKey: assignedWallet.privateKey, // store securely!
@@ -62,17 +59,17 @@ router.post("/register/candidate", (req, res) => {
 /**
  * POST /api/auth/register/company
  * Register a company user.
- * Body: { username, password }
+ * Body: { username }
  * Note: company may need manual approval later.
  */
 router.post("/register/company", async (req, res) => {
-  const { username, password } = req.body;
+  const { username } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ error: "Missing username or password" });
+  if (!username) {
+    return res.status(400).json({ error: "Missing username" });
   }
 
-  if (users.find((u) => u.username === username)) {
+  if (companies.find((u) => u.username === username)) {
     return res.status(400).json({ error: "User already exists" });
   }
 
@@ -100,9 +97,8 @@ router.post("/register/company", async (req, res) => {
     return res.status(500).json({ error: "Failed to whitelist company", details: err.message });
   }
 
-  users.push({
+  companies.push({
     username,
-    password,
     role: "company",
     approved: true,
     walletAddress: assignedWallet.address,
