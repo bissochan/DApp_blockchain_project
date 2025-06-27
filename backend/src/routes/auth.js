@@ -1,12 +1,10 @@
 import express from "express";
+import { masterWallet, UIManager } from "../contracts/contract.js";
+import { enqueueMasterTx } from "../contracts/txQueue.js";
+import wallets from "../utils/wallets.js";
+
 const router = express.Router();
 
-import fs from "fs";
-import path from "path";
-
-const walletsPath = path.resolve("../blockchain_folder/wallets.json");
-const walletsData = fs.readFileSync(walletsPath, "utf-8");
-const wallets = JSON.parse(walletsData);
 let walletIndex = 1;
 
 // In-memory user "database" (MVP)
@@ -67,7 +65,7 @@ router.post("/register/candidate", (req, res) => {
  * Body: { username, password }
  * Note: company may need manual approval later.
  */
-router.post("/register/company", (req, res) => {
+router.post("/register/company", async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -86,7 +84,22 @@ router.post("/register/company", (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
-  // Store company with role "company"
+  const isWhitelisted = await UIManager.isWhitelisted(assignedWallet.address);
+  if (isWhitelisted) {
+    console.log("Company already whitelisted on-chain. Registration failed:", username);
+    return res.status(400).json({ error: "Company already whitelisted on-chain" });
+  }
+
+  try {
+    await enqueueMasterTx((nonce) => {
+      const uiManagerConnected = UIManager.connect(masterWallet);
+      return uiManagerConnected.addWhiteListEntity(assignedWallet.address, { nonce });
+    });
+  } catch (err) {
+    console.error("Failed to whitelist company:", err);
+    return res.status(500).json({ error: "Failed to whitelist company", details: err.message });
+  }
+
   users.push({
     username,
     password,
@@ -96,7 +109,7 @@ router.post("/register/company", (req, res) => {
     privateKey: assignedWallet.privateKey,
   });
 
-  console.log("Company registered:", username);
+  console.log("Company registered and whitelisted:", username);
   res.status(201).json({
     message: "Company registered",
     walletAddress: assignedWallet.address,

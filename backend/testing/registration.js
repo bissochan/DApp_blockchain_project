@@ -9,6 +9,10 @@ async function registerUsers() {
       body: JSON.stringify({ username: `company${i}`, password: `pass${i}` }),
     });
     const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(`Failed to register Company${i}: ${data.error || 'Unknown error'}`);
+    }
     console.log(`Company${i} registered:`, data);
   }
 

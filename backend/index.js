@@ -1,17 +1,9 @@
 import cors from "cors";
-import { JsonRpcProvider, Wallet } from "ethers";
 import express from "express";
-import fs from "fs";
-import path from "path";
-import authRouter from "./auth.js";
+import { masterWallet } from "./src/contracts/contract.js";
+import authRouter from "./src/routes/auth.js";
+import smartContractRouter from "./src/routes/smartContract.js";
 
-const walletsPath = path.resolve("../blockchain_folder/wallets.json");
-const walletsData = fs.readFileSync(walletsPath, "utf-8");
-const wallets = JSON.parse(walletsData);
-const firstWallet = wallets[0];
-
-const provider = new JsonRpcProvider("http://127.0.0.1:8545");
-const masterWallet = new Wallet(firstWallet.privateKey, provider);
 console.log("Master Wallet Address:", masterWallet.address);
 console.log("Master Private Key:", masterWallet.privateKey);
 
@@ -89,6 +81,9 @@ const verificationResults = {
 
 // POST /api/auth/register/candidate or /company
 app.use("/api/auth", authRouter);
+
+// POST /api/smart_contract
+app.use("/api/smart_contract", smartContractRouter);
 
 // POST /api/post_exp
 app.post("/api/post_exp", (req, res) => {

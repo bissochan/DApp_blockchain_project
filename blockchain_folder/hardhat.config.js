@@ -2,7 +2,7 @@ require("@nomicfoundation/hardhat-toolbox");
 const fs = require("fs");
 const path = require("path");
 
-const walletsPath = path.resolve(__dirname, "wallets.json");
+const walletsPath = path.resolve(__dirname, "./address_data/wallets.json");
 let wallets = [];
 
 try {
@@ -39,6 +39,10 @@ module.exports = {
       accounts: privateKeysOnly,
     },
     hardhat: {
+      mining: {
+        auto: false,
+        interval: 1000, // Mine a block every second
+      },
       accounts: hardhatAccounts,
     },
   },

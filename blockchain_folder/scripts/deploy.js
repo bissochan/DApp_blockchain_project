@@ -1,4 +1,6 @@
 const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -31,10 +33,18 @@ async function main() {
   await uiManager.setTokenManager(await tokenManager.getAddress()); // Updated for ethers v6
 
 
-  console.log("Token Manager:", await tokenManager.getAddress());
-  console.log("Storage Manager:", await storageManager.getAddress());
-  console.log("UI Manager:", await uiManager.getAddress());
-  console.log("UI Manager deployed by:", owner.address);
+  const deployedInfo = {
+    UIManager: await uiManager.getAddress(),
+    StorageManager: await storageManager.getAddress(),
+    TokenManager: await tokenManager.getAddress(),
+    Deployer: owner.address
+  };
+
+  const deployedPath = path.resolve(__dirname, "../address_data/deployedContract.json");
+  fs.writeFileSync(deployedPath, JSON.stringify(deployedInfo, null, 2));
+
+  console.log("Contracts deployed and saved to deployed.json:");
+  console.log(deployedInfo);
 }
 
 main().catch((error) => {
