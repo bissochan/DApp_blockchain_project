@@ -2,43 +2,44 @@ require("@nomicfoundation/hardhat-toolbox");
 const fs = require("fs");
 const path = require("path");
 
-// Read wallets.json
 const walletsPath = path.resolve(__dirname, "wallets.json");
 let wallets = [];
 
 try {
-  wallets = JSON.parse(fs.readFileSync(walletsPath));
+  if (fs.existsSync(walletsPath)) {
+    wallets = JSON.parse(fs.readFileSync(walletsPath));
+
+    const isNodeCommand = process.argv[2] === "node";
+    if (isNodeCommand) {
+      console.log(`Loaded ${wallets.length} wallets from wallets.json`);
+    }
+  } else {
+    console.warn("wallets.json file not found. Using default accounts.");
+  }
 } catch (e) {
-  console.warn("Impossible to read wallets.json, using default accounts.");
+  console.warn("Error reading wallets.json. Using default accounts.");
 }
 
-// Consider only the private keys from the wallets
-const accounts = wallets.length > 0
+const hardhatAccounts = wallets.length > 0
   ? wallets.map(w => ({
     privateKey: w.privateKey,
     balance: typeof w.balance === "string" && w.balance.length > 0
       ? w.balance
-      : "10000000000000000000"  // 10 ETH di default come stringa
+      : "10000000000000000000", // Default balance of 10 ETH
   }))
   : undefined;
 
-/** @type import('hardhat/config').HardhatUserConfig */
+const privateKeysOnly = hardhatAccounts?.map(a => a.privateKey);
+
 module.exports = {
   defaultNetwork: "hardhat",
   networks: {
     localhost: {
       url: "http://127.0.0.1:8545",
-      accounts: wallets.length > 0
-        ? wallets.map(w => w.privateKey)  // solo stringhe!
-        : undefined,
+      accounts: privateKeysOnly,
     },
     hardhat: {
-      accounts: wallets.length > 0
-        ? wallets.map(w => ({
-          privateKey: w.privateKey,
-          balance: w.balance || "10000000000000000000",
-        }))
-        : undefined,
+      accounts: hardhatAccounts,
     },
   },
   solidity: {
