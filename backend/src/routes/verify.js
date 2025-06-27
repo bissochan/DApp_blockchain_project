@@ -20,7 +20,7 @@ router.post("/verify_certificate", async (req, res) => {
   const { verifierUsername, certificateHash } = req.body;
 
   // 1. Check if verifier exists
-  const verifier = users.find(u => u.username === verifierUsername);
+  const verifier = users.find(u => u.username === verifierUsername) || companies.find(c => c.username === verifierUsername);
   if (!verifier) return res.status(404).json({ error: "Verifier not found" });
 
   // 2. Check if certificate exists
