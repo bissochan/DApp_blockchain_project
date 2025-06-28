@@ -40,7 +40,7 @@ module.exports = {
     },
     hardhat: {
       mining: {
-        auto: false,
+        auto: true, // changed to true for testing porpuses
         interval: 10, // Mine a block every 10 millisecond
       },
       accounts: hardhatAccounts,

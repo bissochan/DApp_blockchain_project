@@ -54,10 +54,8 @@ contract SCV_storage_manager is ISCVStorageManager {
     event CertificateStored(string cid, bytes32 certHash, uint256 timestamp);
 
     function addCertificate(string memory _cid, bytes32 _certHash) public onlyOwner returns (uint256) {
-        // validate CID
         require(bytes(_cid).length > 0, "Invalid CID");
-
-        // validate that hash does not exists, rare case
+        require(_certHash != bytes32(0), "Invalid certificate hash");
         require(certificateList[_certHash].timestamp == 0, "Certificate already exists");
 
         CertificateInfo memory newCert = CertificateInfo({
@@ -81,21 +79,21 @@ contract SCV_storage_manager is ISCVStorageManager {
     }
 
     function getCertificateInfoByHash(bytes32 _certHash) public view onlyOwner returns (bool, string memory) {
+        require(_certHash != bytes32(0), "Invalid certificate hash");
+
         CertificateInfo storage cert = certificateList[_certHash];
         require(cert.timestamp > 0, "Certificate not found");
-        require(bytes(cert.ipfsCid).length > 0, "Certificate CID is empty");
-        require(cert.certificateHash != bytes32(0), "Certificate hash is empty");
 
-        // Validate timestamp to avoid edge cases (optional)
-        require(cert.timestamp > 0, "Invalid timestamp");
-
-        string memory certInfo;
-        // Build string safely
-        try this.buildCertInfoString(cert) returns (string memory info) {
-            certInfo = info;
-        } catch {
-            return (false, "Error building certificate info string");
-        }
+        string memory certInfo = string(
+            abi.encodePacked(
+                "Timestamp: ",
+                uint2str(cert.timestamp),
+                ", Hash: ",
+                bytes32ToHexString(cert.certificateHash),
+                ", CID: ",
+                cert.ipfsCid
+            )
+        );
 
         return (true, certInfo);
     }

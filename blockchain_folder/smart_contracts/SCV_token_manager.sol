@@ -87,6 +87,7 @@ contract SCV_token_manager is IERC20, IToken {
 
     function transfer(address to, uint256 amount) external override returns (bool) {
         require(to != address(0), "Invalid address");
+        require(to != msg.sender, "Cannot transfer to self");
         require(balances[msg.sender] >= amount, "Insufficient balance");
 
         _transfer(msg.sender, to, amount);
@@ -104,6 +105,7 @@ contract SCV_token_manager is IERC20, IToken {
     function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
         require(from != address(0), "Invalid from address");
         require(to != address(0), "Invalid to address");
+        require(to != from, "Cannot transfer to self");
         require(msg.sender == owner || allowed[from][msg.sender] >= amount, "Not authorized");
         require(balances[from] >= amount, "Insufficient balance");
 

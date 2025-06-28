@@ -9,14 +9,14 @@ interface ISCV_UI_manager {
     function removeWhiteListEntity(address _entity) external returns (bool);
     function setStorageManager(address _storageManagerAddress) external returns (bool);
     function isWhitelisted(address _entity) external view returns (bool);
-    function getCertificateInfo(string memory _certificateHash) external returns (bool, string memory);
-    function getCertificateInfoView(string memory _certificateHash) external view returns (bool, string memory);
+    function getCertificateInfo(bytes32 _certificateHash) external returns (bool, string memory);
+    function getCertificateInfoView(bytes32 _certificateHash) external view returns (bool, string memory);
     function getAllCertificates() external view returns (string memory);
     function getUserTokenBalance(address _user) external view returns (uint256);
     function setTokenManager(address _tokenManagerAddress) external returns (bool);
     function storeCertificate(
         address _entity,
-        string memory _certificateHash,
+        bytes32 _certificateHash,
         string memory _ipfsCid
     ) external returns (bool);
     function getNumCertificates() external view returns (uint256);
@@ -51,7 +51,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
     event StorageManagerUpdated(address indexed newStorageManager);
     event CertificateStored(
         address indexed entity,
-        string certificateHash,
+        bytes32 certificateHash,
         string ipfsCid
     );
     event CertificateLookup(
@@ -162,14 +162,9 @@ contract SCV_UI_manager is ISCV_UI_manager {
     // === Certificate Publishing ===
     function storeCertificate(
         address _entity,
-        string memory _certificateHash,
+        bytes32 _certificateHash,
         string memory _ipfsCid
     ) public onlyWhitelistedEntity storageManagerSet returns (bool) {
-        string memory originalCertificateHash = _certificateHash;
-
-        // Convert string to bytes32 for consistency with storage manager
-        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
-
         require(_entity == msg.sender, "Entity mismatch");
         require(bytes(_ipfsCid).length > 0, "Empty CID");
         require(_certificateHash != bytes32(0), "Invalid hash");
@@ -182,24 +177,15 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
         require(certId > 0, "Certificate storage failed");
 
-        emit CertificateStored(_entity, originalCertificateHash, _ipfsCid);
+        emit CertificateStored(_entity, _certificateHash, _ipfsCid);
 
         // Reward the entity with tokens for storing the certificate
         if (address(tokenManager) != address(0)) {
-
-            try  tokenManager.mint(_entity, TOKEN_PER_REWARD) {
-                // Successfully minted tokens
+            try tokenManager.mint(_entity, TOKEN_PER_REWARD) {
                 emit TokensRewarded(_entity, TOKEN_PER_REWARD);
             } catch {
-                // Handle minting failure (e.g., insufficient balance)
                 revert("Token minting failed");
-                
-            } 
-
-            // emit TokensRewarded(
-            //     _entity,
-            //     TOKEN_PER_REWARD
-            // );
+            }
         }
 
         return true;
@@ -212,28 +198,20 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
     // === Certificate Query Functions ===
     function getCertificateInfo(
-        string memory _certificateHash
-    ) external storageManagerSet returns (bool, string memory) { 
-        // Convert string to bytes32 for consistency with storage manager
-        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
-
-        // Ensure the storage manager is set before querying
+        bytes32 _certificateHash
+    ) external storageManagerSet returns (bool, string memory) {
         require(address(storageManager) != address(0), "Storage manager not set");
         require(_certificateHash != bytes32(0), "Invalid certificate hash");
-        
-        // Check if the token manager is set and if the user has enough tokens
         require(address(tokenManager) != address(0), "Token manager not set");
-        // Check if the user has enough tokens for the lookup
         require(
-                tokenManager.balanceOf(msg.sender) >= TOKEN_PER_LOOKUP,
-                "Insufficient tokens for lookup"
+            tokenManager.balanceOf(msg.sender) >= TOKEN_PER_LOOKUP,
+            "Insufficient tokens for lookup"
         );
-        // send tokens to the contract
+
         tokenManager.transferFrom(msg.sender, address(this), TOKEN_PER_LOOKUP);
 
         (bool exists, string memory cid) = storageManager.getCertificateInfoByHash(_certificateHash);
 
-        // Emit the lookup result so the backend can capture it
         emit CertificateLookup(msg.sender, string(abi.encodePacked(_certificateHash)), cid);
 
         return (exists, cid);
@@ -241,12 +219,9 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
     // view function for the certificate hash stored in the contract, onlyOwner
     function getCertificateInfoView(
-        string memory _certificateHash
+        bytes32 _certificateHash
     ) external view onlyOwner returns (bool, string memory) {
-        // Convert string to bytes32 for consistency with storage manager
-        bytes32 _certificateHash = keccak256(abi.encodePacked(_certificateHash));
         require(_certificateHash != bytes32(0), "Invalid certificate hash");
-        
         return storageManager.getCertificateInfoByHash(_certificateHash);
     }
 

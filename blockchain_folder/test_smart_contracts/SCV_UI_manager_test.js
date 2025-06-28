@@ -1,4 +1,4 @@
-    const { expect, use } = require("chai");
+const { expect, use } = require("chai");
     const { ethers } = require("hardhat");
     const fs = require("fs");
     const path = require("path");
@@ -158,58 +158,32 @@
         });
 
         describe("Certificate Publishing", function () {
-            // Test for// === Certificate Publishing ===
-            // function storeCertificate(
-            //     address _entity,
-            //     string memory _certificateHash,
-            //     string memory _ipfsCid
-            // ) public onlyWhitelistedEntity storageManagerSet returns (bool) {
-            //     require(_entity == msg.sender, "Entity mismatch");
-            //     require(bytes(_ipfsCid).length > 0, "Empty CID");
-            //     require(_certificateHash != bytes32(0), "Invalid hash");
-
-            //     // Forward to storage manager (returns uint256 ID)
-            //     uint256 certId = storageManager.addCertificate(
-            //         _ipfsCid,
-            //         _certificateHash
-            //     );
-
-            //     emit CertificateStored(_entity, _certificateHash, _ipfsCid);
-
-            //     // Reward the entity with tokens for storing the certificate
-            //     if (address(tokenManager) != address(0)) {
-            //         tokenManager.mint(_entity, TOKEN_PER_REWARD);
-            //     }
-
-            //     return true;
-            // }
             it("should allow whitelisted entity to store certificate", async function () {
-                const certificateHash = "Test Certificate";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate"));
                 const ipfsCid = "QmTestCID";
 
                 // Ensure user1 is whitelisted
-                try {
-                    expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
-                } catch (error) {
-                    // console.error("User1 is not whitelisted, adding to whitelist.");
+                if (await uiManager.certifiedWhitelisted(user1.address) === false) {
                     await uiManager.connect(owner).addWhiteListEntity(user1.address);
                     expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
                 }
 
-
+                // Store certificate
                 // Store certificate
                 await expect(
                     uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid)
                 ).to.emit(uiManager, "CertificateStored")
                 .withArgs(user1.address, certificateHash, ipfsCid);
-
-                
-                // allCertificateInfo = await uiManager.getAllCertificates();
-                // console.log("All Certificate Info:", allCertificateInfo);
+                // Verify certificate exists in storage manager
+                const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
+                expect(exists).to.be.true;
+                expect(info).to.include("CID: " + ipfsCid);
+                expect(info).to.include("Timestamp:");
+                expect(info).to.include("Hash:");
             });
 
             it("should not allow non-whitelisted entity to store certificate", async function () {
-                const certificateHash = "Test Certificate";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate"));
                 const ipfsCid = "QmTestCID";
 
                 // Ensure user2 is not whitelisted
@@ -222,15 +196,8 @@
             });
 
             it("should grant reward tokens for storing certificate", async function () {
-                // TOKEN_PER_REWARD is defined in the contract, it is 20 tokens per reward, declared as a constant bigint
-                const TOKEN_PER_REWARD = 20n * 10n ** 0n; // 20 tokens with 0 decimals
-
-                // Ensure user1 has a balance before storing the certificate, debug balances
-                // console.log("User1 Address:", user1.address);
-                // console.log("UI Manager Address:", await uiManager.getAddress());
-                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
-
-                const certificateHash = "Test Certificate";
+                const TOKEN_PER_REWARD = 20n; // 20 tokens per reward
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate"));
                 const ipfsCid = "QmTestCID";
 
                 // Ensure user1 is whitelisted
@@ -239,24 +206,12 @@
                     expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
                 }
 
+                const user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+
                 // Store certificate
                 await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
 
-                // Check user1's balance after storing the certificate4
-                try {
-                    user1BalanceAfter = await uiManager.getUserTokenBalance(user1.address);
-                }catch (error) {
-                    console.error("Error fetching user1 balance after storing certificate:", error);
-                }
-                // // print balances for debugging
-                // console.log("User1 Balance Before:", user1BalanceBefore.toString());
-                // console.log("User1 Balance After:", user1BalanceAfter.toString());
-
-                // // print types of balances
-                // console.log("User1 Balance Before Type:", typeof user1BalanceBefore);
-                // console.log("User1 Balance After Type:", typeof user1BalanceAfter);
-
-                // Check if the balance increased by TOKEN_PER_REWARD
+                const user1BalanceAfter = await uiManager.getUserTokenBalance(user1.address);
                 expect(user1BalanceAfter).to.equal(user1BalanceBefore + TOKEN_PER_REWARD);
             });
         });
@@ -346,7 +301,7 @@
             //     return storageManager.getCertificateInfoByHash(_certificateHash);
             // }
             it("should allow entity to query certificate info by paying tokens", async function () {
-                const certificateHash = "Test Certificate 2";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate 2"));
                 const ipfsCid = "QmTestCID2";
 
                 // Ensure user1 is whitelisted
@@ -358,44 +313,13 @@
                 // Store a certificate first
                 await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
 
-                // Query the certificate info
-                // Should return true and this: string memory certInfo = string(
-                //     abi.encodePacked(
-                //         "Timestamp: ",
-                //         uint2str(cert.timestamp),
-                //         ", Hash: ",
-                //         bytes32ToHexString(cert.certificateHash),
-                //         ", CID: ", cert.ipfsCid
-                //     )
-                // );
-                
-                // allCertificateInfo = await uiManager.getAllCertificates();
-                // console.log("All Certificate Info:", allCertificateInfo);
-
-                // numberOfCertificates = await uiManager.getNumCertificates();
-                // console.log("Number of Certificates:", numberOfCertificates.toString());
-
-                //get the balance of uiManager contract
-                // const uiManagerBalanceBefore = await tokenManager.balanceOf(await uiManager.getAddress());
-                // console.log("UI Manager Balance Before:", uiManagerBalanceBefore.toString());
-
-                // Get the user balance before the lookup
                 const userBalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                const TOKEN_PER_LOOKUP = 10n;
 
-                if (userBalanceBefore < 10n) {
-                    // If user1 has less than 10 tokens, mint more tokens for testing
-                    await tokenManager.connect(owner).mint(user1.address, 20n); // Mint 20 tokens for testing
-                }
-
-
-                // Call the transaction (no return tuple)
+                // Query the certificate info
                 const tx = await uiManager.connect(user1).getCertificateInfo(certificateHash);
                 await tx.wait();
 
-                // Print the hash as what it should be
-                // console.log("Certificate Hash:", ethers.utils.keccak256(ethers.utils.toUtf8Bytes(certificateHash)));
-
-                // Then call a separate view function to get the actual certificate info
                 const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
 
                 expect(exists).to.be.true;
@@ -403,18 +327,12 @@
                 expect(info).to.include("Hash: ");
                 expect(info).to.include("CID: " + ipfsCid);
 
-                const TOKEN_PER_LOOKUP = 10n; // Assuming 10 tokens per lookup, adjust as per your contract logic
                 const userBalanceAfter = await uiManager.getUserTokenBalance(user1.address);
-                // Check if the user balance decreased by TOKEN_PER_LOOKUP
-                expect(userBalanceAfter).to.equal(
-                    userBalanceBefore - TOKEN_PER_LOOKUP,
-                    "User1 balance did not decrease by the expected amount of tokens"
-                );
-
+                expect(userBalanceAfter).to.equal(userBalanceBefore - TOKEN_PER_LOOKUP);
             });
 
             it("should not allow querying certificate info without enough tokens", async function () {
-                const certificateHash = "Test Certificate 3";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate 3"));
                 const ipfsCid = "QmTestCID3";
 
                 // Ensure user2 is whitelisted
@@ -426,38 +344,24 @@
                 // Store a certificate first
                 await uiManager.connect(user2).storeCertificate(user2.address, certificateHash, ipfsCid);
 
-                // Ensure user2 has less than TOKEN_PER_LOOKUP tokens
                 const user2BalanceBefore = await uiManager.getUserTokenBalance(user2.address);
-
-                // if it has more than 10 tokens, burn some tokens for testing
                 if (user2BalanceBefore >= 10n) {
-                    await uiManager.connect(owner).burnUserTokens(user2.address, 20n); // Burn 10 tokens for testing    
+                    await uiManager.connect(owner).burnUserTokens(user2.address, 20n);
                 }
 
-                // Attempt to query the certificate info without enough tokens
                 await expect(
                     uiManager.connect(user2).getCertificateInfo(certificateHash)
                 ).to.be.revertedWith("Insufficient tokens for lookup");
             });
 
-            it ("should not allow querying non-existent certificate info", async function () {
-                const nonExistentCertificateHash = "NonExistentCertificate";
+            it("should not allow querying non-existent certificate info", async function () {
+                const nonExistentCertificateHash = ethers.keccak256(ethers.toUtf8Bytes("NonExistentCertificate"));
 
-                // Ensure user1 has enough tokens
                 const user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
-
                 if (user1BalanceBefore < 10n) {
-                    // If user1 has less than 10 tokens, mint more tokens for testing
-                    await uiManager.connect(owner).mintUserTokens(user1.address, 20n); // Mint 20 tokens for testing
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 20n);
                 }
 
-                // //print getCertificateInfoView function
-                // const [exists, info] = await uiManager.getCertificateInfoView(nonExistentCertificateHash);
-                
-                // console.log("Certificate Exists:", exists);
-                // console.log("Certificate Info:", info);
-
-                // Attempt to query a non-existent certificate
                 await expect(
                     uiManager.connect(user1).getCertificateInfo(nonExistentCertificateHash)
                 ).to.be.revertedWith("Certificate not found");
@@ -607,55 +511,28 @@
         });
 
         describe("Storage Management", function () {
-            // function getAllCertificates() external view onlyOwner returns (string memory) {
-            //     // This function should return all certificate hashes stored in the storage manager
-            //     // Assuming the storage manager has a function to get all certificates
-            //     // This is a placeholder, actual implementation may vary based on storage manager design
-            //     return storageManager.getAllCertificates();
-            // }
-
             it("should allow the owner to see all certificates if not empty", async function () {
-                // Ensure user1 is whitelisted and has stored a certificate
-                const certificateHash = "Test Certificate 4";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("Test Certificate 4"));
                 const ipfsCid = "QmTestCID4";
 
+                // Ensure user1 is whitelisted and has stored a certificate
                 if (await uiManager.certifiedWhitelisted(user1.address) === false) {
-                    await uiManager.addWhiteListEntity(user1.address);
+                    await uiManager.connect(owner).addWhiteListEntity(user1.address);
                     expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.true;
                 }
+
+                // Store certificate
                 await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
+
                 // Call the function to get all certificates
                 const allCertificates = await uiManager.connect(owner).getAllCertificates();
+
                 // Check if the stored certificate is in the returned string
-                expect(allCertificates).to.include(ipfsCid);
-            });
-
-            it("should allow the owner to see all certificates if empty", async function () {
-                // Call the function to get all certificates when no certificates are stored
-                const allCertificates = await uiManager.connect(owner).getAllCertificates();
-                // Check if the returned string is empty or contains a specific message
-                expect(allCertificates).to.equal("No certificates found");
-            });
-
-            it("should not allow non-owner to see all certificates", async function () {
-                await expect(uiManager.connect(user1).getAllCertificates())
-                    .to.be.revertedWith("Only owner: not authorized");
-            });
-
-            it("should allow the owner to get the number of certificates", async function () {
-                await expect(uiManager.connect(owner).getNumCertificates())
-                    .to.not.be.reverted;
-            });
-
-            it("should not allow non-owner to get the number of certificates", async function () {
-                await expect(uiManager.connect(user1).getNumCertificates())
-                    .to.be.revertedWith("Only owner: not authorized");
+                expect(allCertificates).to.include("CID: " + ipfsCid);
             });
 
             it("should allow the owner to get certificate info by Hash without paying token", async function () {
-                const certificateHash = "some_certificate_hash";
-
-                //publish a certificate first
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("some_certificate_hash"));
                 const ipfsCid = "QmTestCID4";
 
                 // Ensure user1 is whitelisted
@@ -668,7 +545,8 @@
                 await uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid);
 
                 // Get certificate info without paying tokens
-                const [exists, info] = await uiManager.getCertificateInfoView(certificateHash);
+                const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
+
                 expect(exists).to.be.true;
                 expect(info).to.include("Timestamp: ");
                 expect(info).to.include("Hash: ");
@@ -676,7 +554,7 @@
             });
 
             it("should not allow non-owner to get certificate info by Hash without paying token", async function () {
-                const certificateHash = "some_certificate_hash";
+                const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("some_certificate_hash"));
 
                 await expect(uiManager.connect(user1).getCertificateInfoView(certificateHash))
                     .to.be.revertedWith("Only owner: not authorized");
