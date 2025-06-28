@@ -12,10 +12,24 @@ import wallets from "./src/utils/wallets.js";
 export const users = [
   {
     id: "user0",
-    username: "demo_user",
+    username: "alice",
     role: "candidate",
     walletAddress: wallets[1].address,
     privateKey: wallets[1].privateKey
+  },
+  {
+    id: "user1",
+    username: "bob",
+    role: "candidate",
+    walletAddress: wallets[2].address,
+    privateKey: wallets[2].privateKey
+  },
+  {
+    id: "user2",
+    username: "carol",
+    role: "candidate",
+    walletAddress: wallets[3].address,
+    privateKey: wallets[3].privateKey
   }
 ];
 
@@ -33,15 +47,23 @@ export const users = [
 export const companies = [
   {
     id: "company0",
-    username: "demo_company",
+    username: "tech_corp",
+    role: "company",
+    approved: true,
+    walletAddress: wallets[4].address,
+    privateKey: wallets[4].privateKey,
+    certificationRequests: []
+  },
+  {
+    id: "company1",
+    username: "block_inc",
     role: "company",
     approved: false,
-    walletAddress: wallets[2].address,
-    privateKey: wallets[2].privateKey,
+    walletAddress: wallets[5].address,
+    privateKey: wallets[5].privateKey,
     certificationRequests: []
   }
 ];
-
 
 /* pendingClaims structure:
 * {

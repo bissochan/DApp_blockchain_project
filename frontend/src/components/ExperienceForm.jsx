@@ -1,7 +1,7 @@
-import { useState } from "react";
-import { postExperience } from "../services/api";
+import { useEffect, useState } from "react";
+import { fetchCompanies, postExperience } from "../services/api";
 
-function ExperienceForm() {
+function ExperienceForm({ currentUser }) {
   const [formData, setFormData] = useState({
     company: "",
     role: "",
@@ -9,9 +9,22 @@ function ExperienceForm() {
     endDate: "",
     description: "",
   });
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
+  useEffect(() => {
+    async function loadCompanies() {
+      try {
+        const res = await fetchCompanies();
+        setCompanies(res.data || []);
+      } catch (err) {
+        console.error("Errore nel caricamento aziende", err);
+      }
+    }
+    loadCompanies();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,7 +36,10 @@ function ExperienceForm() {
     setError(null);
     setSuccess(null);
     try {
-      await postExperience(formData);
+      await postExperience({
+        ...formData,
+        username: currentUser.username,
+      });
       setSuccess("Esperienza aggiunta con successo!");
       setFormData({ company: "", role: "", startDate: "", endDate: "", description: "" });
     } catch (err) {
@@ -39,15 +55,22 @@ function ExperienceForm() {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium">Azienda</label>
-          <input
-            type="text"
+          <select
             name="company"
             value={formData.company}
             onChange={handleChange}
             className="w-full p-2 border rounded-md"
             required
-          />
+          >
+            <option value="">-- Seleziona azienda --</option>
+            {companies.map((c) => (
+              <option key={c.id} value={c.username}>
+                {c.username}
+              </option>
+            ))}
+          </select>
         </div>
+
         <div>
           <label className="block text-sm font-medium">Ruolo</label>
           <input

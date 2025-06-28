@@ -75,20 +75,6 @@ npm install
 npm start
 ```
 
-## Testing Mockup
-
-```bash
-cd backend/testing
-```
-
-### Testing Registration
-
-Each user registration creates a wallet, linking to a pre-created Hardhat wallet.
-
-```bash
-node registration.js
-```
-
 ---
 ---
 

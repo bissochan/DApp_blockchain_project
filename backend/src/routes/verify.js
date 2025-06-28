@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { certificates, users } from "../../database.js";
+import { certificates, companies, users } from "../../database.js";
 import { TokenManager, UIManager, provider } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import { decryptObject } from "../utils/encrypt.js";
@@ -91,6 +91,12 @@ router.post("/verify_certificate", async (req, res) => {
     res.json({
       verified: true,
       certificate: decrypted
+    });
+
+    console.log(`Certificate verified successfully for ${verifierUsername}:`, {
+      certificateHash,
+      cid,
+      decrypted
     });
 
   } catch (err) {
