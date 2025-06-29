@@ -152,7 +152,13 @@ You can run each step manually or use the automated one-liner.
    ```
 
    This will start the server at [http://localhost:5000](http://localhost:5000).
-
+   After the server starts, it will automatically register and whitelist two predefined companies on-chain.
+   
+   ⚠️ **Check the logs to ensure two separate whitelist transactions are confirmed.**
+   If either of the transactions fails, please restart the backend with:
+   ```bash
+   npm start
+   ```
 ---
 
 ## Frontend Setup

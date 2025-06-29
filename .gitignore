@@ -2,5 +2,6 @@ blockchain_folder/artifacts/
 blockchain_folder/cache/
 blockchain_folder/coverage/
 blockchain_folder/node_modules/
+blockchain_folder/address_data/
 backend/node_modules/
 backend/fake_ipfs/
