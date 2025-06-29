@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchCompanies, fetchUsers } from "../services/api";
+import { admins } from "../database.js"; // Importa il mock degli admin
 
 function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -20,12 +21,12 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
             fetchUsers(),
             fetchCompanies(),
           ]);
-          all = [...(resUsers.data || []), ...(resCompanies.data || [])];
+          all = [...(resUsers.data || []), ...(resCompanies.data || []), ...admins];
         }
         setFilteredUsers(all);
       } catch (err) {
         console.error("Failed to load users or companies", err);
-        setFilteredUsers([]); // fallback to empty array
+        setFilteredUsers([...admins]); // Fallback con solo admin
       } finally {
         setLoading(false);
       }
@@ -34,10 +35,9 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
     loadUsers();
   }, [filter]);
 
-
   const handleChange = (e) => {
     const selectedId = e.target.value;
-    const newUser = filteredUsers.find(u => u.id === selectedId);
+    const newUser = filteredUsers.find((u) => u.id === selectedId);
     if (newUser) onChangeUser(newUser);
   };
 
@@ -46,7 +46,8 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100 border rounded mb-4">
       <div className="text-sm">
-        <span className="font-semibold">Utente corrente:</span> {currentUser?.username} ({currentUser?.role})
+        <span className="font-semibold">Utente corrente:</span>{" "}
+        {currentUser?.username} ({currentUser?.role})
       </div>
       <div>
         <select
@@ -54,6 +55,7 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
           onChange={handleChange}
           className="p-2 border rounded"
         >
+          <option value="">-- Seleziona utente --</option>
           {Array.isArray(filteredUsers) &&
             filteredUsers.map((u) => (
               <option key={u.id} value={u.id}>

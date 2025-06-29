@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import ExperienceForm from "../components/ExperienceForm";
 import ExperienceList from "../components/ExperienceList";
-import Navbar from "../components/navbar";
+import Navbar from "../components/Navbar";
 import UserSwitcher from "../components/UserSwitcher";
 import { fetchUsers } from "../services/api";
 
