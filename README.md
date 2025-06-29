@@ -4,8 +4,58 @@ A decentralized application (DApp) demo with smart contracts, backend, and front
 This guide explains how to set up and run the local blockchain with Hardhat.
 
 ---
+# Project Structure
 
-# Local Blockchain Setup (Hardhat)
+This repository is divided into three main parts: `backend/`, `blockchain_folder/`, and `frontend/`.
+
+### Root Directory
+
+Contains documentation and main folders for the DApp.
+```
+DApp_blockchain_project/
+├── backend/                         # Express.js backend
+│   ├── database.js                  # In-memory database
+│   ├── index.js
+│   ├── package.json
+│   ├── fake_ipfs/                   # Simulated IPFS storage
+│   │   └── <simulated IPFS files>   # (JSONs simulating CID content)
+│   └── src/
+│       ├── contracts/               # Blockchain interaction logic
+│       │   ├── contract.js          # Loads contracts
+│       │   ├── setup.js             # Setup default wallets
+│       │   └── txQueue.js           # Nonce-safe queue for tx management
+│       ├── routes/                  # REST API routes
+│       │   ├── auth.js
+│       │   ├── claims.js
+│       │   ├── DB_queries.js
+│       │   ├── token.js
+│       │   └── verify.js
+│       └── utils/                   # Utility functions
+│           ├── encrypt.js
+│           ├── fakeIpfs.js
+│           └── wallets.js
+├── blockchain_folder/               # Smart contract code, deployment scripts, tests
+│   ├── hardhat.config.cjs
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── example.address_data/        # Example wallet and deployment data (for git)
+│   ├── scripts/                     # Hardhat scripts
+│   │   ├── deploy.js                # Deploys all contracts and links them
+│   │   ├── wallet_generator.js      # Generates N wallets with ETH balances
+│   │   └── wait-for-hardhat.js      # Waits for Hardhat node to be ready
+│   ├── smart_contracts/
+│   │   ├── SCV_UI_manager.sol       # Main interface contract for storing, whitelisting, etc.
+│   │   ├── SCV_storage_manager.sol  # Stores certificate data (hash + CID)
+│   │   └── SCV_token_manager.sol    # ERC20-like token for access control
+│   └── test_smart_contracts/        # Solidity + JS tests for the contracts
+├── frontend/                        # React.js frontend for the DApp
+├── README.md
+└── BlockChain_overview.pdf
+```
+
+
+# Setup Instructions
+## Local Blockchain Setup (Hardhat)
 
 1. Navigate to the `blockchain_folder`
 
@@ -21,13 +71,27 @@ This guide explains how to set up and run the local blockchain with Hardhat.
    > Installs: hardhat, ethers, and Hardhat plugins.
 ---
 
-## Development Workflow
+### Development Workflow
 
 You can run each step manually or use the automated one-liner.
 
 ---
 
-**Option A** – Manual step-by-step
+**Option A** – One-liner (Recommended)
+
+   ```bash
+   npm run dev:full
+   ```
+   
+   > This command:
+   1. Generates wallets
+   2. Opens a new terminal for the node
+   3. Waits for the node to be ready
+   4. Deploys all contracts
+
+   It's cross-platform compatible and all data saved in `address_data/`
+
+**Option B** – Manual step-by-step
 
 1. Generate wallets
 
@@ -58,30 +122,7 @@ You can run each step manually or use the automated one-liner.
 
 ---
 
-**Option B** – One-liner (Recommended)
-
-   ```bash
-   npm run dev:full
-   ```
-   
-   > This command:
-   1. Generates wallets
-   2. Opens a new terminal for the node
-   3. Waits for the node to be ready
-   4. Deploys all contracts
-
-   It's cross-platform compatible and all data saved in `address_data/`
-
-## Owner Account Handling
-
-- When deploying, the address that executes the deployment becomes the owner (`msg.sender`).
-- To maintain control, always deploy using your own key or wallet.
-- To interact as the owner, use the same private key or unlock the account via a provider (e.g., MetaMask or `.env`).
-
----
----
-
-# Backend Setup
+## Backend Setup
 
 1. Navigate to the `backend` directory
 
@@ -95,9 +136,16 @@ You can run each step manually or use the automated one-liner.
    npm install
    ```
 
-## Running the Backend Server
+### Running the Backend Server
 
    The backend server uses Express.js and connects to the local blockchain.
+
+   When starting the local blockchain, wait (about 10 seconds are required) for the following files to appear in `blockchain_folder/address_data/` before proceeding:
+   - wallets.json
+   - deployedContract.json
+
+   These contain the generated wallets and deployed contract addresses.
+   Them, start the backend server with:
 
    ```bash
    npm start
@@ -106,16 +154,15 @@ You can run each step manually or use the automated one-liner.
    This will start the server at [http://localhost:5000](http://localhost:5000).
 
 ---
----
 
-# Frontend Setup
+## Frontend Setup
 
-## Prerequisites
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) (version 18 or higher recommended)
 - [npm](https://www.npmjs.com/) (comes with Node.js)
 
-## Installation
+### Installation
 
 1. Open a terminal and navigate to the `frontend` directory:
 
@@ -129,7 +176,7 @@ You can run each step manually or use the automated one-liner.
    npm install
    ```
 
-## Running the Development Server
+### Running the Development Server
 
 Start the local development server with:
 
@@ -139,7 +186,7 @@ npm run dev
 
 This will launch the app at [http://localhost:5173](http://localhost:5173) (or another port if 5173 is in use).
 
-## Building for Production
+### Building for Production
 
 To build the optimized production bundle:
 
@@ -147,7 +194,7 @@ To build the optimized production bundle:
 npm run build
 ```
 
-## Linting
+### Linting
 
 To check for code style and errors:
 
@@ -155,7 +202,7 @@ To check for code style and errors:
 npm run lint
 ```
 
-## Preview Production Build
+### Preview Production Build
 
 To preview the production build locally:
 
