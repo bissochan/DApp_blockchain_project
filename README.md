@@ -1,64 +1,78 @@
 # Blockchain course's project: DApp [Work in progress]
 
-A demo project showcasing a decentralized application (DApp) architecture with separate frontend and backend components. This repository contains the basic structure for building a blockchain-based application.
-
-# Blockchain Setup
-
-`hardhat.config.js` is set up to create 6 wallets: 1 master wallet for the backend and 5 wallets for the users.
-
-### 1. Navigate to the blockchain directory
-```bash
-cd blockchain_folder
-```
-
-### 2. Initialize a Node.js project (if not already)
-```bash
-npm init -y
-```
-
-### 3. Install Hardhat as a dev dependency
-```bash
-npm install --save-dev hardhat
-```
-
-### 4. Create a new Hardhat project
-Choose "Create a JavaScript project" when prompted.
-
-```bash
-npx hardhat
-```
-
-### 5. Compile the smart contracts
-Make sure your contracts are inside the `smart_contracts` directory (as configured in `hardhat.config.js`).
-
-```bash
-npx hardhat compile
-```
-
-### 6. Start the local Hardhat blockchain
-```bash
-npx hardhat node
-```
-
-This starts a local in-memory Ethereum node on `http://127.0.0.1:8545`.
-
-If `wallets.json` is present and correctly formatted, it will be loaded automatically.  
-You should see a message like:
-
-```
-Loaded 6 wallets from wallets.json
-```
-
-### 7. Deploy smart contracts to the local network
-This command runs the `deploy.js` script and deploys your smart contracts to the running local Hardhat network.
-
-```bash
-npx hardhat run scripts/deploy.js --network localhost
-```
+A decentralized application (DApp) demo with smart contracts, backend, and frontend architecture.
+This guide explains how to set up and run the local blockchain with Hardhat.
 
 ---
 
-## 🔑 Owner Account Handling
+# Local Blockchain Setup (Hardhat)
+
+1. Navigate to the `blockchain_folder`
+
+   ```bash
+   cd blockchain_folder
+   ```
+
+2. Install dependencies
+
+   ```bash
+   npm install
+   ```
+   > Installs: hardhat, ethers, and Hardhat plugins.
+---
+
+## Development Workflow
+
+You can run each step manually or use the automated one-liner.
+
+---
+
+**Option A** – Manual step-by-step
+
+1. Generate wallets
+
+   ```bash
+   npm run generate-wallets
+   ```
+
+   > Creates address_data/wallets.json with:
+   - 1 master wallet (high balance)
+   - 19 user wallets (random smaller balances)
+
+2. Start the local Hardhat node
+   ```bash
+   npm run start-node
+   ```
+   > Starts a local blockchain at http://127.0.0.1:8545.
+
+3. Deploy smart contracts (in a new terminal)
+   ```bash
+   npm run deploy-contracts
+   ```
+    > Deploys:
+    - SCV_UI_manager
+    - SCV_storage_manager
+    - SCV_token_manager
+
+    > Output: address_data/deployedContract.json
+
+---
+
+**Option B** – One-liner (Recommended)
+
+   ```bash
+   npm run dev:full
+   ```
+   
+   > This command:
+   1. Generates wallets
+   2. Opens a new terminal for the node
+   3. Waits for the node to be ready
+   4. Deploys all contracts
+
+   It's cross-platform compatible and all data saved in `address_data/`
+
+## Owner Account Handling
 
 - When deploying, the address that executes the deployment becomes the owner (`msg.sender`).
 - To maintain control, always deploy using your own key or wallet.
@@ -69,11 +83,27 @@ npx hardhat run scripts/deploy.js --network localhost
 
 # Backend Setup
 
-```bash
-cd backend
-npm install
-npm start
-```
+1. Navigate to the `backend` directory
+
+   ```bash
+   cd backend
+   ```
+
+2. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+## Running the Backend Server
+
+   The backend server uses Express.js and connects to the local blockchain.
+
+   ```bash
+   npm start
+   ```
+
+   This will start the server at [http://localhost:5000](http://localhost:5000).
 
 ---
 ---
