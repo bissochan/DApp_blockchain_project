@@ -84,9 +84,10 @@ router.post("/register/company", async (req, res) => {
     id: `company${nextCompanyId++}`,
     username,
     role: "company",
-    approved: false, // Non whitelisted di default
+    approved: false,
     walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
+    wasWorker: false, // Nuovo flag per tracciare se era un lavoratore
   });
 
   console.log("Company registered:", username);
@@ -171,6 +172,7 @@ router.post("/approve_whitelist", async (req, res) => {
           approved: true,
           walletAddress: user.walletAddress,
           privateKey: user.privateKey,
+          wasWorker: true, // Segna che era un lavoratore
         });
       }
     } else {
@@ -207,10 +209,12 @@ router.post("/reject_whitelist", (req, res) => {
 router.post("/remove_certifier", async (req, res) => {
   const { username } = req.body;
 
-  const company = companies.find((c) => c.username === username);
-  if (!company || !company.approved) {
+  const companyIndex = companies.findIndex((c) => c.username === username);
+  if (companyIndex === -1 || !companies[companyIndex].approved) {
     return res.status(404).json({ error: "Certifier not found or not whitelisted" });
   }
+
+  const company = companies[companyIndex];
 
   try {
     await enqueueTxForWallet(masterWallet, (nonce) => {
@@ -218,7 +222,21 @@ router.post("/remove_certifier", async (req, res) => {
       return uiManagerConnected.removeWhiteListEntity(company.walletAddress, { nonce });
     });
 
+    // Imposta approved: false
     company.approved = false;
+
+    // Se l'utente era originariamente un lavoratore, riaggiungilo a users
+    if (company.wasWorker) {
+      const [removedCompany] = companies.splice(companyIndex, 1);
+      users.push({
+        id: `user${nextUserId++}`,
+        username: removedCompany.username,
+        role: "candidate",
+        walletAddress: removedCompany.walletAddress,
+        privateKey: removedCompany.privateKey,
+      });
+    }
+
     console.log("Certifier removed:", { username });
     res.json({ status: "certifier_removed", username });
   } catch (err) {

@@ -3,18 +3,13 @@ import Navbar from "../components/Navbar";
 import UserSwitcher from "../components/UserSwitcher";
 import WhitelistRequestForm from "../components/WhitelistRequestForm";
 import CertifierList from "../components/CertifierList";
-import { admins } from "../database.js";
 
 function AdminDashboard() {
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    if (admins.length > 0) {
-      setCurrentUser(admins[0]); // Imposta il primo admin come default
-    }
-  }, []);
-
-  if (!currentUser) return <div className="p-8">Caricamento admin...</div>;
+  const [currentUser, setCurrentUser] = useState({
+    id: "admin1",
+    username: "admin",
+    role: "admin",
+  });
 
   return (
     <div className="min-h-screen bg-secondary">

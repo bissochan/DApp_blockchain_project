@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { fetchCompanies, fetchUsers } from "../services/api";
-import { admins } from "../database.js"; // Importa il mock degli admin
 
 function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -21,12 +20,16 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
             fetchUsers(),
             fetchCompanies(),
           ]);
-          all = [...(resUsers.data || []), ...(resCompanies.data || []), ...admins];
+          all = [
+            ...(resUsers.data || []),
+            ...(resCompanies.data || []),
+            { id: "admin1", username: "admin", role: "admin" },
+          ];
         }
         setFilteredUsers(all);
       } catch (err) {
         console.error("Failed to load users or companies", err);
-        setFilteredUsers([...admins]); // Fallback con solo admin
+        setFilteredUsers([{ id: "admin1", username: "admin", role: "admin" }]);
       } finally {
         setLoading(false);
       }
