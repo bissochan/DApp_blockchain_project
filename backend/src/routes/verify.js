@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { certificates, users } from "../../database.js";
+import { certificates, companies, users } from "../../database.js";
 import { TokenManager, UIManager, provider } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import { decryptObject } from "../utils/encrypt.js";
@@ -88,9 +88,24 @@ router.post("/verify_certificate", async (req, res) => {
     }
 
     // 8. Return verified certificate data
+    const user = users.find(u => u.id === cert.userId);
+    const company = companies.find(c => c.id === cert.companyId);
+
+    if (user) decrypted.claim.user = user.username;
+    if (company) decrypted.claim.company = company.username;
+
+    delete decrypted.claim.userId; // Remove sensitive user ID from decrypted data
+    delete decrypted.claim.companyId; // Remove sensitive company ID from decrypted data
+
     res.json({
       verified: true,
       certificate: decrypted
+    });
+
+    console.log(`Certificate verified successfully for ${verifierUsername}:`, {
+      certificateHash,
+      cid,
+      decrypted
     });
 
   } catch (err) {

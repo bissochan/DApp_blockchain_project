@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { checkHash } from "../services/api";
 
-function VerificationForm() {
+function VerificationForm({ currentUser, resetSignal }) {
   const [hash, setHash] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+  }, [resetSignal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,10 +18,21 @@ function VerificationForm() {
     setResult(null);
     setError(null);
     try {
-      const response = await checkHash(hash);
+      const response = await checkHash({
+        verifierUsername: currentUser.username,
+        certificateHash: hash
+      });
       setResult(response.data);
     } catch (err) {
-      setError("Errore durante la verifica.");
+      if (err.response?.data?.error === "Insufficient token balance for verification") {
+        setError("Token insufficienti per effettuare la verifica. Acquista token prima di continuare.");
+      } else if (err.response?.data?.error === "Certificate not found") {
+        setError("Certificato non trovato.");
+      } else if (err.response?.data?.error === "Verifier not found") {
+        setError("Verificatore non trovato.");
+      } else {
+        setError("Errore durante la verifica.");
+      }
     } finally {
       setLoading(false);
     }
@@ -48,12 +64,17 @@ function VerificationForm() {
       {result && (
         <div className="mt-4">
           <h3 className="font-semibold">Risultato della verifica</h3>
-          <p>Stato: {result.valid ? "Valido" : "Non valido"}</p>
-          {result.valid && (
+          <p>Stato: {result.verified ? "Valido" : "Non valido"}</p>
+          {result.verified && result.certificate?.claim && (
             <>
-              <p>Azienda: {result.company}</p>
-              <p>Ruolo: {result.role}</p>
-              <p>Data: {result.startDate} - {result.endDate}</p>
+              <p>Candidato: {result.certificate.claim.user}</p>
+              <p>Azienda: {result.certificate.claim.company}</p>
+              <p>Ruolo: {result.certificate.claim.role}</p>
+              <p>
+                Data: {result.certificate.claim.startDate} -{" "}
+                {result.certificate.claim.endDate || "In corso"}
+              </p>
+              <p className="text-sm text-gray-600 mt-2">Descrizione: {result.certificate.claim.description}</p>
             </>
           )}
         </div>

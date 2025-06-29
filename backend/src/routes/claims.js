@@ -15,6 +15,7 @@ let nextClaimId = 1;
  * Candidate creates a new claim (experience request) to be approved by a company.
  */
 router.post("/create_claim", async (req, res) => {
+  console.log("Received claim creation request:", req.body);
   const { username, company, role, startDate, endDate, description } = req.body;
 
   const user = users.find(u => u.username === username);

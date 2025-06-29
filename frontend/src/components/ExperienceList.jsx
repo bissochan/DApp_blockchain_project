@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
-import { getAllExperiences } from "../services/api";
+import { useEffect, useState } from "react";
+import { getUserCertificates } from "../services/api";
 
-function ExperienceList() {
-  const [data, setData] = useState([]);
+function ExperienceList({ currentUser }) {
+  const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!currentUser?.id) return;
+
     const fetchExperiences = async () => {
       try {
-        const response = await getAllExperiences();
-        setData(response.data);
+        const response = await getUserCertificates(currentUser.id);
+        setCerts(response.data);
       } catch (err) {
         setError("Errore durante il caricamento delle esperienze.");
       } finally {
@@ -18,28 +20,25 @@ function ExperienceList() {
       }
     };
     fetchExperiences();
-  }, []);
+  }, [currentUser]);
 
   if (loading) return <p>Caricamento...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Le Tue Esperienze</h2>
-      {data.length === 0 ? (
+      <h2 className="text-xl font-semibold mb-4">Le Tue Esperienze Certificate</h2>
+      {certs.length === 0 ? (
         <p>Nessuna esperienza trovata.</p>
       ) : (
         <div className="space-y-4">
-          {data.map((exp) => (
-            <div key={exp.id} className="border-b pb-2">
-              <h3 className="font-semibold">{exp.company}</h3>
-              <p>{exp.role}</p>
-              <p className="text-gray-600">
-                {exp.startDate} - {exp.endDate || "In corso"}
+          {certs.map((exp) => (
+            <div key={exp.certificateHash} className="border-b pb-2">
+              <p className="text-sm text-gray-700">
+                <span className="font-medium">CID:</span> {exp.cid}
               </p>
-              <p className="text-sm text-gray-500">{exp.description}</p>
               <p className="text-sm text-gray-700 break-all">
-                <span className="font-medium">Hash:</span> {exp.hash || "Non disponibile"}
+                <span className="font-medium">Hash:</span> {exp.certificateHash}
               </p>
             </div>
           ))}

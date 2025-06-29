@@ -1,24 +1,31 @@
 import { Wallet } from "ethers";
+import { companies, users } from "../../database.js";
 import wallets from "../utils/wallets.js";
 import { UIManager, masterWallet, provider } from "./contract.js";
 import { enqueueTxForWallet } from "./txQueue.js";
 
 export async function ensureDefaultCompanyWhitelisted() {
-  const companyWallet = new Wallet(wallets[2].privateKey, provider);
+  const offset = users.length + 1; // Start from the index after all users
 
-  const isWhitelisted = await UIManager.isWhitelisted(companyWallet.address);
-  if (isWhitelisted) {
-    console.log(`✓ [INIT] Company already whitelisted: ${companyWallet.address}`);
-    return;
-  }
+  for (let i = 0; i < companies.length; i++) {
+    const walletIndex = offset + i;
+    const company = companies[i];
+    const companyWallet = new Wallet(wallets[walletIndex].privateKey, provider);
 
-  try {
-    await enqueueTxForWallet(masterWallet, (nonce) => {
-      const uiConnected = UIManager.connect(masterWallet);
-      return uiConnected.addWhiteListEntity(companyWallet.address, { nonce });
-    });
-    console.log(`✓ [INIT] Company successfully whitelisted: ${companyWallet.address}`);
-  } catch (err) {
-    console.error(`✖ [INIT] Failed to whitelist company: ${err.message}`);
+    const isWhitelisted = await UIManager.isWhitelisted(companyWallet.address);
+    if (isWhitelisted) {
+      console.log(`✓ [INIT] Company already whitelisted: ${company.username} (${companyWallet.address})`);
+      continue;
+    }
+
+    try {
+      await enqueueTxForWallet(masterWallet, (nonce) => {
+        const uiConnected = UIManager.connect(masterWallet);
+        return uiConnected.addWhiteListEntity(companyWallet.address, { nonce });
+      });
+      console.log(`✓ [INIT] Company whitelisted: ${company.username} (${companyWallet.address})`);
+    } catch (err) {
+      console.error(`✖ [INIT] Failed to whitelist ${company.username}: ${err.message}`);
+    }
   }
 }
