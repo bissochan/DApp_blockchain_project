@@ -100,7 +100,7 @@ router.post("/approve_claim", async (req, res) => {
   };
   const encrypted = encryptObject(claimBundle);
   const cid = fakeIpfsAdd(encrypted);
-  const certificateHash = createHash("sha256").update(cid).digest("hex");
+  const certificateHash = "0x" + createHash("sha256").update(cid).digest("hex");
 
   console.log("CID:", cid);
   console.log("Hash:", certificateHash);

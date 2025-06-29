@@ -2,6 +2,7 @@
   "name": "hardhat-project",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "concurrently": "^9.2.0",
     "hardhat": "^2.25.0"
   },
   "dependencies": {
@@ -10,11 +11,17 @@
   "version": "1.0.0",
   "main": "hardhat.config.js",
   "scripts": {
+    "generate-wallets": "node scripts/wallet_generator.js",
+    "start-node": "npx hardhat node",
+    "wait-for-node": "node scripts/wait-for-hardhat.js",
+    "deploy-contracts": "npx hardhat run scripts/deploy.js --network localhost",
+    "dev": "npm run generate-wallets && npm run start-node",
+    "dev:full": "npm run generate-wallets && concurrently \"npm run start-node\" \"npm run wait-for-node && npm run deploy-contracts\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
-  "type": "commonjs"
+  "type": "module"
 }

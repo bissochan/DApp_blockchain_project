@@ -1,6 +1,11 @@
-const { ethers } = require("hardhat");
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import hardhat from "hardhat";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+const { ethers } = hardhat;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function main() {
   const [owner] = await ethers.getSigners();
@@ -43,8 +48,10 @@ async function main() {
     Deployer: owner.address
   };
 
-  const deployedPath = path.resolve(__dirname, "../address_data/deployedContract.json");
-  fs.writeFileSync(deployedPath, JSON.stringify(deployedInfo, null, 2));
+  const outputDir = path.resolve(__dirname, "../address_data");
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
+
+  fs.writeFileSync(path.join(outputDir, "deployedContract.json"), JSON.stringify(deployedInfo, null, 2));
 
   console.log("Contracts deployed and saved to deployed.json:");
   console.log(deployedInfo);

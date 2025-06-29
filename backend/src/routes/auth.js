@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import express from "express";
 import { companies, users } from "../../database.js";
 import { masterWallet, UIManager } from "../contracts/contract.js";
@@ -7,9 +8,9 @@ import wallets from "../utils/wallets.js";
 const router = express.Router();
 
 // Wallet index management
-let walletIndex = 1;
-let nextUserId = 1;
-let nextCompanyId = 1;
+let walletIndex = users.length + companies.length + 1; // Skip wallet[0] as it's the master wallet
+let nextUserId = users.length;
+let nextCompanyId = companies.length;
 
 // Assign the next available wallet from preloaded ones
 function getNextWallet() {
@@ -45,12 +46,13 @@ router.post("/register/candidate", (req, res) => {
 
   // Store user and wallet info (simplified for MVP)
   users.push({
-    id: nextUserId++,
+    id: `user${nextUserId++}`,
     username,
     role: "candidate",
-    walletAddress: assignedWallet.address,
-    privateKey: assignedWallet.privateKey, // Store securely in real applications
+    walletAddress: ethers.getAddress(assignedWallet.address),
+    privateKey: assignedWallet.privateKey,
   });
+
 
   console.log("Candidate registered:", username);
   res.status(201).json({
@@ -102,13 +104,14 @@ router.post("/register/company", async (req, res) => {
 
   // Save company info off-chain
   companies.push({
-    id: nextCompanyId++,
+    id: `company${nextCompanyId++}`,
     username,
     role: "company",
     approved: true,
-    walletAddress: assignedWallet.address,
+    walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
   });
+
 
   console.log("Company registered and whitelisted:", username);
   res.status(201).json({

@@ -20,17 +20,6 @@ const PORT = 5000;
 app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
-
-// Mock hash generator
-const generateMockHash = () => {
-  const chars = "0123456789abcdef";
-  let hash = "0x";
-  for (let i = 0; i < 32; i++) {
-    hash += chars[Math.floor(Math.random() * 16)];
-  }
-  return hash;
-};
-
 // === ROUTES ===
 
 app.use("/api/utils", utilsRouter);
