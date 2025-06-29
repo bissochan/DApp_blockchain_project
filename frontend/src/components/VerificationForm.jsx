@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { checkHash } from "../services/api";
 
-function VerificationForm({ currentUser }) {
+function VerificationForm({ currentUser, resetSignal }) {
   const [hash, setHash] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setResult(null);
+    setError(null);
+  }, [resetSignal]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,7 +67,8 @@ function VerificationForm({ currentUser }) {
           <p>Stato: {result.verified ? "Valido" : "Non valido"}</p>
           {result.verified && result.certificate?.claim && (
             <>
-              <p>Azienda: {result.certificate.claim.companyId}</p>
+              <p>Candidato: {result.certificate.claim.user}</p>
+              <p>Azienda: {result.certificate.claim.company}</p>
               <p>Ruolo: {result.certificate.claim.role}</p>
               <p>
                 Data: {result.certificate.claim.startDate} -{" "}

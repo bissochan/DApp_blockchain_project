@@ -6,6 +6,7 @@ import { fetchCompanies, fetchUsers, fundUser } from "../services/api";
 
 function VerifierDashboard() {
   const [currentUser, setCurrentUser] = useState(null);
+  const [userSwitchKey, setUserSwitchKey] = useState(0);
   const [fundingStatus, setFundingStatus] = useState(null);
   const [fundingDetails, setFundingDetails] = useState(null);
 
@@ -51,11 +52,16 @@ function VerifierDashboard() {
 
         <UserSwitcher
           currentUser={currentUser}
-          onChangeUser={setCurrentUser}
+          onChangeUser={(user) => {
+            setCurrentUser(user);
+            setUserSwitchKey(prev => prev + 1);
+            setFundingStatus(null);
+            setFundingDetails(null);
+          }}
           filter="all"
         />
 
-        <VerificationForm currentUser={currentUser} />
+        <VerificationForm currentUser={currentUser} resetSignal={userSwitchKey} />
 
         {/* BOTTONE CENTRATO */}
         <div className="mt-6 flex flex-col items-center">
