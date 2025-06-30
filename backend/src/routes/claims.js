@@ -26,7 +26,7 @@ router.post("/create_claim", async (req, res) => {
   }
 
   // Cerca l'azienda tramite company o companyName, verificando che sia whitelistata
-  const companyObj = companies.find(c => c.username === (company || companyName) && c.approved);
+  const companyObj = companies.find(c => c.username === (company || companyName) && c.approvalStatus === "approved");
   if (!companyObj) {
     console.error(`Company not found or not whitelisted: company=${company}, companyName=${companyName}`);
     return res.status(404).json({ error: "Company not found or not whitelisted" });
@@ -60,7 +60,6 @@ router.post("/create_claim", async (req, res) => {
   console.log("New claim created:", { claimId, claim, userSignature });
   res.json({ status: "claim_created", claimId });
 });
-
 /**
  * GET /api/claim/pending/:companyId
  * Return all pending claims for a specific company.

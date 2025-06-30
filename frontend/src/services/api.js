@@ -15,7 +15,13 @@ export const fetchUsersAndCompanies = () => API.get("/utils/all");
 
 // Worker endpoints
 export const postWorker = (data) => API.post("/auth/register/candidate", data);
-export const postExperience = (data) => API.post("/claim/create_claim", data);
+export const postExperience = (data) => {
+  console.log("Dati inviati a /claim/create_claim:", data); // Log per debug
+  return API.post("/claim/create_claim", {
+    ...data,
+    company: data.company, // Assicurati che il campo sia 'company'
+  });
+};
 export const getUserCertificates = (userId) => API.get(`/utils/user_certificates/${userId}`);
 
 // Certifier endpoints
