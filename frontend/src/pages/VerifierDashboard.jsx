@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import Navbar from "../components/navbar";
+import Navbar from "../components/Navbar";
 import UserSwitcher from "../components/UserSwitcher";
 import VerificationForm from "../components/VerificationForm";
 import { fetchCompanies, fetchUsers, fundUser } from "../services/api";

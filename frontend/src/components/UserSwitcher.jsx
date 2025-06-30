@@ -20,12 +20,16 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
             fetchUsers(),
             fetchCompanies(),
           ]);
-          all = [...(resUsers.data || []), ...(resCompanies.data || [])];
+          all = [
+            ...(resUsers.data || []),
+            ...(resCompanies.data || []),
+            { id: "admin1", username: "admin", role: "admin" },
+          ];
         }
         setFilteredUsers(all);
       } catch (err) {
         console.error("Failed to load users or companies", err);
-        setFilteredUsers([]); // fallback to empty array
+        setFilteredUsers([{ id: "admin1", username: "admin", role: "admin" }]);
       } finally {
         setLoading(false);
       }

@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { companies, users } from "../../database.js";
+import { companies, pendingWhitelistRequests, users } from "../../database.js";
 import { masterWallet, UIManager } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import wallets from "../utils/wallets.js";
@@ -76,7 +76,6 @@ router.post("/register/company", async (req, res) => {
     return res.status(400).json({ error: "User already exists" });
   }
 
-  // Wallet assignment (no company verification for MVP)
   let assignedWallet;
   try {
     assignedWallet = getNextWallet();
@@ -91,33 +90,102 @@ router.post("/register/company", async (req, res) => {
     return res.status(400).json({ error: "Company already whitelisted on-chain" });
   }
 
-  // Whitelist on-chain using master wallet
-  try {
-    await enqueueTxForWallet(masterWallet, (nonce) => {
-      const uiManagerConnected = UIManager.connect(masterWallet);
-      return uiManagerConnected.addWhiteListEntity(assignedWallet.address, { nonce });
-    });
-  } catch (err) {
-    console.error("Failed to whitelist company:", err);
-    return res.status(500).json({ error: "Failed to whitelist company", details: err.message });
-  }
-
   // Save company info off-chain
+  const companyId = `company${nextCompanyId++}`;
+
   companies.push({
-    id: `company${nextCompanyId++}`,
+    id: companyId,
     username,
     role: "company",
-    approved: true,
+    approvalStatus: "pending",
     walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
   });
 
+  pendingWhitelistRequests.push({
+    requestId: `req_${Date.now()}`,
+    companyId,
+    username,
+  });
 
-  console.log("Company registered and whitelisted:", username);
+  console.log("Company registered and awaiting approval:", username);
+
   res.status(201).json({
-    message: "Company registered",
+    message: "Company registration submitted. Awaiting approval.",
     walletAddress: assignedWallet.address,
   });
+});
+
+/**
+ * GET /api/auth/pending_whitelist_requests
+ * Return all pending whitelist requests.
+ */
+router.get("/pending_whitelist_requests", (req, res) => {
+  const pending = pendingWhitelistRequests.map((req) => {
+    const company = companies.find((c) => c.id === req.companyId);
+    return {
+      requestId: req.requestId,
+      companyId: req.companyId,
+      username: req.username,
+      walletAddress: company?.walletAddress || "",
+    };
+  });
+
+  res.json(pending);
+});
+
+/**
+ * POST /api/auth/approve_whitelist
+ * Approve a pending whitelist request and whitelist the company on-chain.
+ * Body: { requestId }
+ */
+router.post("/approve_whitelist", async (req, res) => {
+  const { requestId } = req.body;
+  const request = pendingWhitelistRequests.find((r) => r.requestId === requestId);
+  if (!request) return res.status(404).json({ error: "Request not found" });
+
+  const company = companies.find((c) => c.id === request.companyId);
+  if (!company) return res.status(404).json({ error: "Company not found" });
+
+  // Whitelist on-chain using master wallet
+  try {
+    await enqueueTxForWallet(masterWallet, (nonce) => {
+      const uiManagerConnected = UIManager.connect(masterWallet);
+      return uiManagerConnected.addWhiteListEntity(company.walletAddress, { nonce });
+    });
+
+    company.approvalStatus = "approved";
+    const index = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
+    pendingWhitelistRequests.splice(index, 1);
+
+    console.log("Approved and whitelisted company:", company.username);
+    res.status(200).json({ message: "Company approved and whitelisted." });
+  } catch (err) {
+    console.error("Error during whitelisting:", err);
+    res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+  }
+});
+
+/**
+ * POST /api/auth/reject_whitelist
+ * Reject a pending whitelist request.
+ * Body: { requestId }
+ */
+router.post("/reject_whitelist", (req, res) => {
+  const { requestId } = req.body;
+  const requestIndex = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
+
+  if (requestIndex === -1) return res.status(404).json({ error: "Request not found" });
+
+  const request = pendingWhitelistRequests[requestIndex];
+  const company = companies.find((c) => c.id === request.companyId);
+  if (!company) return res.status(404).json({ error: "Company not found" });
+
+  company.approvalStatus = "rejected";
+  pendingWhitelistRequests.splice(requestIndex, 1);
+
+  console.log("Rejected whitelist request for:", company.username);
+  res.status(200).json({ message: "Company whitelist request rejected." });
 });
 
 export default router;
