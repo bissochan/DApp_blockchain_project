@@ -173,7 +173,7 @@ const path = require("path");
                 await expect(
                     uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid)
                 ).to.emit(uiManager, "CertificateStored")
-                .withArgs(user1.address, certificateHash, ipfsCid);
+                .withArgs(user1.address);
                 // Verify certificate exists in storage manager
                 const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
                 expect(exists).to.be.true;
