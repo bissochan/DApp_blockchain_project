@@ -9,7 +9,7 @@ import { fakeIpfsCat } from "../utils/fakeIpfs.js";
 const router = express.Router();
 
 // Define the token amount required to verify a certificate
-const TOKEN_PER_LOOKUP = ethers.parseUnits("10", 18); // 10 tokens
+const TOKEN_PER_LOOKUP = 10n; // 10 tokens
 
 /**
  * POST /api/verify/verify_certificate
@@ -28,10 +28,10 @@ router.post("/verify_certificate", async (req, res) => {
   if (!cert) return res.status(404).json({ error: "Certificate not found" });
 
   const verifierWallet = new ethers.Wallet(verifier.privateKey, provider);
-  const balance = await TokenManager.balanceOf(verifierWallet.address);
+  const balanceBigInt = await TokenManager.balanceOf(verifierWallet.address);
 
-  if (balance < TOKEN_PER_LOOKUP) {
-    console.warn(`Insufficient balance for ${verifierUsername}: ${ethers.formatUnits(balance, 18)} tokens`);
+  if (balanceBigInt < TOKEN_PER_LOOKUP) {
+    console.warn(`Insufficient balance for ${verifierUsername}: ${balanceBigInt} tokens, required ${TOKEN_PER_LOOKUP}`);
     return res.status(400).json({
       error: "Insufficient token balance for verification"
     });
