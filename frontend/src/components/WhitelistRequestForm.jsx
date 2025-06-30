@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { getPendingWhitelistRequests, approveWhitelistRequest, rejectWhitelistRequest } from "../services/api";
+import { approveWhitelistRequest, getPendingWhitelistRequests, rejectWhitelistRequest } from "../services/api";
 
 function WhitelistRequestForm({ currentUser }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -25,6 +26,7 @@ function WhitelistRequestForm({ currentUser }) {
   const handleRequest = async (requestId, isApproved) => {
     setError(null);
     setSuccessMessage(null);
+    setProcessingId(requestId);
     try {
       const response = isApproved
         ? await approveWhitelistRequest({ requestId })
@@ -37,6 +39,8 @@ function WhitelistRequestForm({ currentUser }) {
       );
     } catch (err) {
       setError("Errore durante l'elaborazione della richiesta.");
+    } finally {
+      setProcessingId(null);
     }
   };
 
