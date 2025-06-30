@@ -15,13 +15,12 @@ export function enqueueTxForWallet(wallet, fnFactory) {
   const txPromise = queue.then(async () => {
     console.log(`→ Executing tx for wallet ${address}`);
 
-    const nonce = await provider.getTransactionCount(address, "latest");
+    const nonce = await provider.getTransactionCount(address, "pending");
     console.log("Current nonce:", nonce);
 
     const tx = await fnFactory(nonce);
     console.log("Transaction created:", tx.hash);
 
-    await provider.send("evm_mine", []);
     const receipt = await tx.wait();
 
     if (!receipt || receipt.status !== 1) {

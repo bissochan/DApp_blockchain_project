@@ -3,8 +3,8 @@ import http from "http";
 const HOST = "127.0.0.1";
 const PORT = 8545;
 
-const RETRIES = 30;
 const DELAY = 500; // ms
+const RETRIES = 60; // 30 seconds
 
 function checkNodeReady() {
   return new Promise((resolve) => {
