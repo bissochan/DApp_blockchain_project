@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { companies, users } from "../../database.js";
+import { admins, companies, users } from "../../database.js";
 import { UIManager, masterWallet } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 
@@ -13,7 +13,10 @@ const router = express.Router();
 router.post("/fund_user", async (req, res) => {
   const { username, amount } = req.body;
 
-  const user = users.find(u => u.username === username) || companies.find(c => c.username === username);
+  const user =
+    users.find(u => u.username === username) ||
+    companies.find(c => c.username === username) ||
+    admins.find(a => a.username === username);
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const amountInWei = ethers.parseUnits(amount.toString(), 18);

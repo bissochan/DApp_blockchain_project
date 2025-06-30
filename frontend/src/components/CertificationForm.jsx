@@ -13,14 +13,21 @@ function CertificationForm({ currentUser }) {
         const response = await getMyRequestExperiences(currentUser.id);
         setRequests(response.data);
       } catch (err) {
-        setError("Errore durante il caricamento delle richieste.");
+        const message = err.response?.data?.error;
+        if (message === "Company approval is still pending") {
+          setError("La tua richiesta di registrazione come azienda è ancora in attesa.");
+        } else if (message === "Company registration was rejected") {
+          setError("La tua richiesta di registrazione come azienda è stata rifiutata.");
+        } else {
+          setError("Errore durante il caricamento delle richieste.");
+        }
       } finally {
         setLoading(false);
       }
     };
 
     if (currentUser?.id) fetchRequests();
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const handleCertify = async (id, isApproved) => {
     setError(null);
@@ -46,11 +53,13 @@ function CertificationForm({ currentUser }) {
 
   if (loading) return <p>Caricamento...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
-  {successMessage && <p className="text-green-600">{successMessage}</p>}
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Richieste di Certificazione</h2>
+
+      {successMessage && <p className="text-green-600">{successMessage}</p>}
+
       {requests.length === 0 ? (
         <p>Nessuna richiesta trovata.</p>
       ) : (

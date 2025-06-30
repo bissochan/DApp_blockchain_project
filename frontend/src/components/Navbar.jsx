@@ -17,6 +17,9 @@ function Navbar() {
           <NavLink to="/verifier" className="hover:underline">
             Verificatore
           </NavLink>
+          <NavLink to="/admin" className="hover:underline">
+            Admin
+          </NavLink>
         </div>
       </div>
     </nav>
