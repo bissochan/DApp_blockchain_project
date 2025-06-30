@@ -5,10 +5,7 @@ const API = axios.create({
   baseURL: "http://localhost:5000/api",
 });
 
-
 API.interceptors.request.use((config) => {
-    // Add any request interceptors here if needed
-    //for example we can add auth here
   return config;
 });
 
@@ -32,5 +29,11 @@ export const checkHash = ({ verifierUsername, certificateHash }) =>
   API.post("/verify/verify_certificate", { verifierUsername, certificateHash });
 export const fundUser = ({ username, amount }) => API.post("/token/fund_user", { username, amount });
 
+// Admin endpoints
+export const requestWhitelist = (data) => API.post("/auth/request_whitelist", data);
+export const getPendingWhitelistRequests = () => API.get("/auth/pending_whitelist_requests");
+export const approveWhitelistRequest = (data) => API.post("/auth/approve_whitelist", data);
+export const rejectWhitelistRequest = (data) => API.post("/auth/reject_whitelist", data);
+export const removeCertifier = (data) => API.post("/auth/remove_certifier", data);
 
 export default API;

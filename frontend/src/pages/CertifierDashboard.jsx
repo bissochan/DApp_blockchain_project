@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import CertificationForm from "../components/CertificationForm";
-import Navbar from "../components/navbar";
+import Navbar from "../components/Navbar";
 import UserSwitcher from "../components/UserSwitcher";
 import { fetchCompanies } from "../services/api";
 
