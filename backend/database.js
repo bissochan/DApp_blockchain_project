@@ -129,3 +129,15 @@ export const pendingClaims = [
 */
 export const certificates = [
 ];
+
+export const pendingWhitelistRequests = [];
+
+export const admins = [
+  {
+    id: "admin1",
+    username: "admin",
+    role: "admin",
+    walletAddress: "0x0000000000000000000000000000000000000000",
+    privateKey: "0x0000000000000000000000000000000000000000000000000000000000000000",
+  },
+];

@@ -5,6 +5,9 @@ import Home from "./pages/Home";
 import VerifierDashboard from "./pages/VerifierDashboard";
 import WorkerDashboard from "./pages/WorkerDashboard";
 
+import AdminDashboard from "./pages/AdminDashboard";
+
+
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },
   { path: "/worker", element: <WorkerDashboard /> },

@@ -1,6 +1,8 @@
+
 import { useState } from "react";
 import Navbar from "../components/Navbar";
 import { postCompany, postWorker } from "../services/api";
+
 
 function Home() {
   const [username, setUsername] = useState("");

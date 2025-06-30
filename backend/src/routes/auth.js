@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { companies, pendingWhitelistRequests, users } from "../../database.js";
+import { admins, companies, users, pendingWhitelistRequests } from "../../database.js";
 import { masterWallet, UIManager } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import wallets from "../utils/wallets.js";
@@ -11,6 +11,7 @@ const router = express.Router();
 let walletIndex = users.length + companies.length + 1; // Skip wallet[0] as it's the master wallet
 let nextUserId = users.length;
 let nextCompanyId = companies.length;
+let nextWhitelistRequestId = 1;
 
 // Assign the next available wallet from preloaded ones
 function getNextWallet() {
@@ -24,7 +25,6 @@ function getNextWallet() {
 
 /**
  * POST /api/auth/register/candidate
- * Register a new candidate with username and assign wallet.
  */
 router.post("/register/candidate", (req, res) => {
   const { username } = req.body;
@@ -44,7 +44,6 @@ router.post("/register/candidate", (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
-  // Store user and wallet info (simplified for MVP)
   users.push({
     id: `user${nextUserId++}`,
     username,
@@ -52,7 +51,6 @@ router.post("/register/candidate", (req, res) => {
     walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
   });
-
 
   console.log("Candidate registered:", username);
   res.status(201).json({
@@ -63,7 +61,6 @@ router.post("/register/candidate", (req, res) => {
 
 /**
  * POST /api/auth/register/company
- * Register a new company and whitelist it on-chain.
  */
 router.post("/register/company", async (req, res) => {
   const { username } = req.body;
@@ -83,6 +80,7 @@ router.post("/register/company", async (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
+
   // Check if already whitelisted (avoid double registration)
   const isWhitelisted = await UIManager.isWhitelisted(assignedWallet.address);
   if (isWhitelisted) {
@@ -100,7 +98,9 @@ router.post("/register/company", async (req, res) => {
     approvalStatus: "pending",
     walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
+    wasWorker: false, // Nuovo flag per tracciare se era un lavoratore
   });
+
 
   pendingWhitelistRequests.push({
     requestId: `req_${Date.now()}`,
@@ -117,6 +117,7 @@ router.post("/register/company", async (req, res) => {
 });
 
 /**
+
  * GET /api/auth/pending_whitelist_requests
  * Return all pending whitelist requests.
  */
@@ -130,12 +131,12 @@ router.get("/pending_whitelist_requests", (req, res) => {
       walletAddress: company?.walletAddress || "",
     };
   });
-
   res.json(pending);
 });
 
 /**
  * POST /api/auth/approve_whitelist
+
  * Approve a pending whitelist request and whitelist the company on-chain.
  * Body: { requestId }
  */
@@ -163,11 +164,13 @@ router.post("/approve_whitelist", async (req, res) => {
   } catch (err) {
     console.error("Error during whitelisting:", err);
     res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+
   }
 });
 
 /**
  * POST /api/auth/reject_whitelist
+
  * Reject a pending whitelist request.
  * Body: { requestId }
  */
@@ -188,4 +191,47 @@ router.post("/reject_whitelist", (req, res) => {
   res.status(200).json({ message: "Company whitelist request rejected." });
 });
 
+/**
+ * POST /api/auth/remove_certifier
+ */
+router.post("/remove_certifier", async (req, res) => {
+  const { username } = req.body;
+
+  const companyIndex = companies.findIndex((c) => c.username === username);
+  if (companyIndex === -1 || !companies[companyIndex].approved) {
+    return res.status(404).json({ error: "Certifier not found or not whitelisted" });
+  }
+
+  const company = companies[companyIndex];
+
+  try {
+    await enqueueTxForWallet(masterWallet, (nonce) => {
+      const uiManagerConnected = UIManager.connect(masterWallet);
+      return uiManagerConnected.removeWhiteListEntity(company.walletAddress, { nonce });
+    });
+
+    // Imposta approved: false
+    company.approved = false;
+
+    // Se l'utente era originariamente un lavoratore, riaggiungilo a users
+    if (company.wasWorker) {
+      const [removedCompany] = companies.splice(companyIndex, 1);
+      users.push({
+        id: `user${nextUserId++}`,
+        username: removedCompany.username,
+        role: "candidate",
+        walletAddress: removedCompany.walletAddress,
+        privateKey: removedCompany.privateKey,
+      });
+    }
+
+    console.log("Certifier removed:", { username });
+    res.json({ status: "certifier_removed", username });
+  } catch (err) {
+    console.error("Failed to remove certifier:", err);
+    res.status(500).json({ error: "Failed to remove certifier", details: err.message });
+  }
+});
+
 export default router;
+
