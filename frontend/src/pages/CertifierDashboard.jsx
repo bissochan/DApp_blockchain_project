@@ -12,7 +12,7 @@ function CertifierDashboard() {
       try {
         const res = await fetchCompanies();
         if (res.data.length > 0) {
-          setCurrentUser(res.data[0]); // Prima company disponibile
+          setCurrentUser(res.data[0]); // First company as default
         }
       } catch (err) {
         console.error("Failed to load companies", err);
@@ -36,7 +36,7 @@ function CertifierDashboard() {
           filter="companies"
         />
 
-        <CertificationForm currentUser={currentUser} />
+        <CertificationForm key={currentUser.id} currentUser={currentUser} />
       </div>
     </div>
   );

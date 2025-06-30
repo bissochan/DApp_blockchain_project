@@ -11,7 +11,8 @@ function CertifierList({ currentUser }) {
     const fetchCertifiers = async () => {
       try {
         const response = await fetchCompanies();
-        setCertifiers(response.data.filter((c) => c.approved));
+        setCertifiers(response.data.filter((c) => c.approvalStatus === "approved"));
+
       } catch (err) {
         setError("Errore durante il caricamento dei certificatori.");
       } finally {

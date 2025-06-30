@@ -1,6 +1,6 @@
 import { ethers } from "ethers";
 import express from "express";
-import { certificates, companies, users } from "../../database.js";
+import { admins, certificates, companies, users } from "../../database.js";
 import { TokenManager, UIManager, provider } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import { decryptObject } from "../utils/encrypt.js";
@@ -20,7 +20,7 @@ router.post("/verify_certificate", async (req, res) => {
   const { verifierUsername, certificateHash } = req.body;
 
   // 1. Check if verifier exists
-  const verifier = users.find(u => u.username === verifierUsername) || companies.find(c => c.username === verifierUsername);
+  const verifier = users.find(u => u.username === verifierUsername) || companies.find(c => c.username === verifierUsername || admins.find(a => a.username === verifierUsername));
   if (!verifier) return res.status(404).json({ error: "Verifier not found" });
 
   // 2. Check if certificate exists

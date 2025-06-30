@@ -80,127 +80,115 @@ router.post("/register/company", async (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
+
+  // Check if already whitelisted (avoid double registration)
+  const isWhitelisted = await UIManager.isWhitelisted(assignedWallet.address);
+  if (isWhitelisted) {
+    console.log("Company already whitelisted on-chain. Registration failed:", username);
+    return res.status(400).json({ error: "Company already whitelisted on-chain" });
+  }
+
+  // Save company info off-chain
+  const companyId = `company${nextCompanyId++}`;
+
   companies.push({
-    id: `company${nextCompanyId++}`,
+    id: companyId,
     username,
     role: "company",
-    approved: false,
+    approvalStatus: "pending",
     walletAddress: ethers.getAddress(assignedWallet.address),
     privateKey: assignedWallet.privateKey,
     wasWorker: false, // Nuovo flag per tracciare se era un lavoratore
   });
 
-  console.log("Company registered:", username);
+
+  pendingWhitelistRequests.push({
+    requestId: `req_${Date.now()}`,
+    companyId,
+    username,
+  });
+
+  console.log("Company registered and awaiting approval:", username);
+
   res.status(201).json({
-    message: "Company registered",
+    message: "Company registration submitted. Awaiting approval.",
     walletAddress: assignedWallet.address,
   });
 });
 
 /**
- * POST /api/auth/request_whitelist
- */
-router.post("/request_whitelist", (req, res) => {
-  const { username } = req.body;
 
-  const entity = users.find((u) => u.username === username) || companies.find((c) => c.username === username);
-  if (!entity) {
-    return res.status(404).json({ error: "Entity not found" });
-  }
-
-  if (entity.role === "company" && entity.approved) {
-    return res.status(400).json({ error: "Entity already whitelisted" });
-  }
-
-  const existingRequest = pendingWhitelistRequests.find((r) => r.username === username && r.status === "pending");
-  if (existingRequest) {
-    return res.status(400).json({ error: "Whitelist request already pending" });
-  }
-
-  const requestId = `whitelist_${nextWhitelistRequestId++}`;
-  pendingWhitelistRequests.push({
-    requestId,
-    username,
-    walletAddress: entity.walletAddress,
-    status: "pending",
-  });
-
-  console.log("Whitelist request created:", { requestId, username });
-  res.status(201).json({ status: "whitelist_request_created", requestId });
-});
-
-/**
  * GET /api/auth/pending_whitelist_requests
+ * Return all pending whitelist requests.
  */
 router.get("/pending_whitelist_requests", (req, res) => {
-  const pending = pendingWhitelistRequests.filter((r) => r.status === "pending");
+  const pending = pendingWhitelistRequests.map((req) => {
+    const company = companies.find((c) => c.id === req.companyId);
+    return {
+      requestId: req.requestId,
+      companyId: req.companyId,
+      username: req.username,
+      walletAddress: company?.walletAddress || "",
+    };
+  });
   res.json(pending);
 });
 
 /**
  * POST /api/auth/approve_whitelist
+
+ * Approve a pending whitelist request and whitelist the company on-chain.
+ * Body: { requestId }
  */
 router.post("/approve_whitelist", async (req, res) => {
   const { requestId } = req.body;
-
   const request = pendingWhitelistRequests.find((r) => r.requestId === requestId);
-  if (!request || request.status !== "pending") {
-    return res.status(404).json({ error: "Whitelist request not found or already processed" });
-  }
+  if (!request) return res.status(404).json({ error: "Request not found" });
 
-  const entity = users.find((u) => u.username === request.username) || companies.find((c) => c.username === request.username);
-  if (!entity) {
-    return res.status(404).json({ error: "Entity not found" });
-  }
+  const company = companies.find((c) => c.id === request.companyId);
+  if (!company) return res.status(404).json({ error: "Company not found" });
 
+  // Whitelist on-chain using master wallet
   try {
     await enqueueTxForWallet(masterWallet, (nonce) => {
       const uiManagerConnected = UIManager.connect(masterWallet);
-      return uiManagerConnected.addWhiteListEntity(entity.walletAddress, { nonce });
+      return uiManagerConnected.addWhiteListEntity(company.walletAddress, { nonce });
     });
 
-    request.status = "approved";
+    company.approvalStatus = "approved";
+    const index = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
+    pendingWhitelistRequests.splice(index, 1);
 
-    if (entity.role === "candidate") {
-      const userIndex = users.findIndex((u) => u.username === request.username);
-      if (userIndex !== -1) {
-        const [user] = users.splice(userIndex, 1);
-        companies.push({
-          id: `company${nextCompanyId++}`,
-          username: user.username,
-          role: "company",
-          approved: true,
-          walletAddress: user.walletAddress,
-          privateKey: user.privateKey,
-          wasWorker: true, // Segna che era un lavoratore
-        });
-      }
-    } else {
-      entity.approved = true;
-    }
-
-    console.log("Whitelist request approved:", { requestId, username: entity.username });
-    res.json({ status: "whitelist_approved", username: entity.username });
+    console.log("Approved and whitelisted company:", company.username);
+    res.status(200).json({ message: "Company approved and whitelisted." });
   } catch (err) {
-    console.error("Failed to approve whitelist request:", err);
-    res.status(500).json({ error: "Failed to approve whitelist", details: err.message });
+    console.error("Error during whitelisting:", err);
+    res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+
   }
 });
 
 /**
  * POST /api/auth/reject_whitelist
+
+ * Reject a pending whitelist request.
+ * Body: { requestId }
  */
 router.post("/reject_whitelist", (req, res) => {
   const { requestId } = req.body;
+  const requestIndex = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
 
-  const request = pendingWhitelistRequests.find((r) => r.requestId === requestId);
-  if (!request || request.status !== "pending") {
-    return res.status(404).json({ error: "Whitelist request not found or already processed" });
-  }
+  if (requestIndex === -1) return res.status(404).json({ error: "Request not found" });
 
-  request.status = "rejected";
-  console.log("Whitelist request rejected:", { requestId, username: request.username });
-  res.json({ status: "whitelist_rejected", requestId });
+  const request = pendingWhitelistRequests[requestIndex];
+  const company = companies.find((c) => c.id === request.companyId);
+  if (!company) return res.status(404).json({ error: "Company not found" });
+
+  company.approvalStatus = "rejected";
+  pendingWhitelistRequests.splice(requestIndex, 1);
+
+  console.log("Rejected whitelist request for:", company.username);
+  res.status(200).json({ message: "Company whitelist request rejected." });
 });
 
 /**
@@ -246,3 +234,4 @@ router.post("/remove_certifier", async (req, res) => {
 });
 
 export default router;
+

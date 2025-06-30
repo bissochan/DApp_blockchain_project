@@ -18,7 +18,7 @@ function ExperienceForm({ currentUser }) {
     async function loadCompanies() {
       try {
         const res = await fetchCompanies();
-        setCompanies(res.data || []);
+        setCompanies((res.data || []).filter((c) => c.approvalStatus === "approved"));
       } catch (err) {
         console.error("Errore nel caricamento aziende", err);
       }

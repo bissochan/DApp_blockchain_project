@@ -1,9 +1,12 @@
 import { createBrowserRouter } from "react-router-dom";
-import Home from "./pages/Home";
-import WorkerDashboard from "./pages/WorkerDashboard";
-import CertifierDashboard from "./pages/CertifierDashboard";
-import VerifierDashboard from "./pages/VerifierDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import CertifierDashboard from "./pages/CertifierDashboard";
+import Home from "./pages/Home";
+import VerifierDashboard from "./pages/VerifierDashboard";
+import WorkerDashboard from "./pages/WorkerDashboard";
+
+import AdminDashboard from "./pages/AdminDashboard";
+
 
 const router = createBrowserRouter([
   { path: "/", element: <Home /> },

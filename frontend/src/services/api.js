@@ -14,10 +14,12 @@ export const fetchCompanies = () => API.get("/utils/companies");
 export const fetchUsersAndCompanies = () => API.get("/utils/all");
 
 // Worker endpoints
+export const postWorker = (data) => API.post("/auth/register/candidate", data);
 export const postExperience = (data) => API.post("/claim/create_claim", data);
 export const getUserCertificates = (userId) => API.get(`/utils/user_certificates/${userId}`);
 
 // Certifier endpoints
+export const postCompany = (data) => API.post("/auth/register/company", data);
 export const getMyRequestExperiences = (companyId) => API.get(`/claim/pending/${companyId}`);
 export const postExperienceCertification = ({ claimId, companyUsername, isApproved }) => {
   const endpoint = isApproved ? "/claim/approve_claim" : "/claim/reject_claim";

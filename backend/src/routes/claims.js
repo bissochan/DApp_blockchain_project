@@ -68,6 +68,19 @@ router.post("/create_claim", async (req, res) => {
 router.get("/pending/:companyId", (req, res) => {
   const { companyId } = req.params;
 
+  const company = companies.find(c => c.id === companyId);
+  if (!company) {
+    return res.status(404).json({ error: "Company not found" });
+  }
+
+  if (company.approvalStatus === "pending") {
+    return res.status(403).json({ error: "Company approval is still pending" });
+  }
+
+  if (company.approvalStatus === "rejected") {
+    return res.status(403).json({ error: "Company registration was rejected" });
+  }
+
   const companyClaims = pendingClaims.filter(
     (c) => c.claim.companyId === companyId && c.status === "pending"
   );

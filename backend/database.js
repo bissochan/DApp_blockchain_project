@@ -1,8 +1,28 @@
 import wallets from "./src/utils/wallets.js";
 // Simulates a simple in-memory database for user and CV data
 
+/* admins structure:
+* {
+*  id: 'admin1',
+*  username: 'admin',
+*  role: 'admin',
+*  walletAddress: '0x...',
+*  privateKey: '0x...',
+* }
+*/
+export const admins = [
+  {
+    id: "admin1",
+    username: "admin",
+    role: "admin",
+    walletAddress: wallets[0].address,
+    privateKey: wallets[0].privateKey,
+  },
+];
+
 /* users structure:
 * {
+*  id: 'user1',
 *  username: 'certifier1',
 *  role: 'candidate',
 *  walletAddress: '0x...',
@@ -35,9 +55,10 @@ export const users = [
 
 /* companies structure:
 * {
+*  id: 'company1',
 *  username: 'company1',
 *  role: 'company',
-*  approved: true,
+*  approvalStatus: 'pending' | 'approved' | 'rejected',
 *  walletAddress: '0x...',
 *  privateKey: '0x...',
 * }
@@ -48,7 +69,7 @@ export const companies = [
     id: "company0",
     username: "tech_corp",
     role: "company",
-    approved: true,
+    approvalStatus: "approved",
     walletAddress: wallets[4].address,
     privateKey: wallets[4].privateKey,
   },
@@ -56,11 +77,28 @@ export const companies = [
     id: "company1",
     username: "block_inc",
     role: "company",
-    approved: false,
+    approvalStatus: "approved",
     walletAddress: wallets[5].address,
     privateKey: wallets[5].privateKey,
+  },
+  {
+    id: "company2",
+    username: "web3_solutions",
+    role: "company",
+    approvalStatus: "pending",
+    walletAddress: wallets[6].address,
+    privateKey: wallets[6].privateKey,
   }
 ];
+
+/* pendingWhitelistRequests structure:
+* {
+*   requestId: 'req_...',
+*   companyId: 'company3',
+*   username: 'example_company'
+* }
+*/
+export const pendingWhitelistRequests = [];
 
 /* pendingClaims structure:
 * {
