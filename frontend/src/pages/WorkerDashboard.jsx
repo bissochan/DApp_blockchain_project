@@ -214,7 +214,7 @@ function WorkerDashboard() {
           </div>
 
           {/* Form per richiedere whitelist */}
-          <RequestWhitelistForm currentUser={currentUser} />
+          {/*<RequestWhitelistForm currentUser={currentUser} />*/}
         </div>
       </div>
     </div>
