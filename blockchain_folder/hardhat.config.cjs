@@ -41,7 +41,7 @@ module.exports = {
     hardhat: {
       mining: {
         auto: false, // changed to true for testing porpuses
-        interval: 500, // 500 ms
+        interval: 100, // 500 ms
       },
       accounts: hardhatAccounts,
     },
