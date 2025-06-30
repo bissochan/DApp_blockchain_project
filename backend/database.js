@@ -58,7 +58,7 @@ export const users = [
 *  id: 'company1',
 *  username: 'company1',
 *  role: 'company',
-*  approvalStatus: 'pending' | 'approved' | 'rejected',
+*  approvalStatus: 'pending' | 'approved' | 'rejected' | 'removed',
 *  walletAddress: '0x...',
 *  privateKey: '0x...',
 * }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { approveWhitelistRequest, getPendingWhitelistRequests, rejectWhitelistRequest } from "../services/api";
 
-function WhitelistRequestForm({ currentUser }) {
+function RequestWhitelistForm({ currentUser }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -92,4 +92,4 @@ function WhitelistRequestForm({ currentUser }) {
   );
 }
 
-export default WhitelistRequestForm;
+export default RequestWhitelistForm;

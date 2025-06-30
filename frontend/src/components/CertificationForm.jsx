@@ -18,6 +18,8 @@ function CertificationForm({ currentUser }) {
           setError("La tua richiesta di registrazione come azienda è ancora in attesa.");
         } else if (message === "Company registration was rejected") {
           setError("La tua richiesta di registrazione come azienda è stata rifiutata.");
+        } else if (message === "Company has been removed from the whitelist") {
+          setError("La tua azienda è stata rimossa dalla whitelist. Contatta un amministratore.");
         } else {
           setError("Errore durante il caricamento delle richieste.");
         }

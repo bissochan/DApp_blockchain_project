@@ -1,8 +1,10 @@
+
 import { useState } from "react";
 import CertifierList from "../components/CertifierList";
 import Navbar from "../components/Navbar";
+import RequestWhitelistForm from "../components/RequestWhitelistForm";
 import UserSwitcher from "../components/UserSwitcher";
-import WhiteListRequestForm from "../components/WhiteListRequestForm";
+
 
 function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState({
@@ -12,7 +14,6 @@ function AdminDashboard() {
   });
 
   if (!currentUser) return <div className="p-8">Caricamento admin...</div>;
-
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
@@ -26,7 +27,7 @@ function AdminDashboard() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <WhiteListRequestForm currentUser={currentUser} />
+          <RequestWhitelistForm currentUser={currentUser} />
           <CertifierList currentUser={currentUser} />
         </div>
       </div>

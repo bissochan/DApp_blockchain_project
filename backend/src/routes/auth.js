@@ -188,4 +188,39 @@ router.post("/reject_whitelist", (req, res) => {
   res.status(200).json({ message: "Company whitelist request rejected." });
 });
 
+/**
+ * POST /api/auth/remove_certifier
+ * Remove a company from the whitelist
+ * Body: { username }
+ */
+router.post("/remove_certifier", async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return res.status(400).json({ error: "Missing username" });
+  }
+
+  const company = companies.find((c) => c.username === username);
+  if (!company) {
+    return res.status(404).json({ error: "Company not found" });
+  }
+
+  try {
+    await enqueueTxForWallet(masterWallet, (nonce) => {
+      const uiManagerConnected = UIManager.connect(masterWallet);
+      return uiManagerConnected.removeWhiteListEntity(company.walletAddress, { nonce });
+    });
+
+    company.approvalStatus = "removed";
+
+    console.log(`Removed certifier ${username} from whitelist`);
+    res.status(200).json({ message: "Certifier removed from whitelist", username });
+
+  } catch (err) {
+    console.error("Error removing certifier from whitelist:", err);
+    res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+  }
+});
+
+
 export default router;

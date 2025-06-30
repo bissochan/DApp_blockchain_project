@@ -44,6 +44,9 @@ contract SCV_UI_manager is ISCV_UI_manager {
     uint256 public constant TOKEN_INCREASE_SUPPLY_OF = 1000; // Amount of tokens to increase supply by
 
     mapping(address => bool) public _certifiedWhitelisted;
+     
+    // Certificate querying, list that remembers which wallet can see a specific certificate
+    mapping(address => mapping(bytes32 => bool)) public certificateQueryWhitelist;
 
     // === Events ===
     event EntityWhitelisted(address indexed entity);
@@ -214,14 +217,21 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
         emit CertificateLookup(msg.sender, string(abi.encodePacked(_certificateHash)), cid);
 
+        // Add the certificate to the whitelist for the user
+        certificateQueryWhitelist[msg.sender][_certificateHash] = true;
+
         return (exists, cid);
     }
 
     // view function for the certificate hash stored in the contract, onlyOwner
     function getCertificateInfoView(
         bytes32 _certificateHash
-    ) external view onlyOwner returns (bool, string memory) {
+    ) external view returns (bool, string memory) {
         require(_certificateHash != bytes32(0), "Invalid certificate hash");
+        if(msg.sender != owner) {
+            require(certificateQueryWhitelist[msg.sender][_certificateHash], "Not authorized for this certificate");
+        }
+
         return storageManager.getCertificateInfoByHash(_certificateHash);
     }
 

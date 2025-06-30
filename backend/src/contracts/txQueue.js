@@ -1,5 +1,5 @@
-const nonceCache = new Map();
 const queues = new Map();
+const nonceCache = new Map();
 
 export function enqueueTxForWallet(wallet, fnFactory) {
   const address = wallet.address.toLowerCase();

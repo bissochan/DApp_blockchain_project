@@ -45,9 +45,10 @@ router.post("/verify_certificate", async (req, res) => {
     });
 
     // 4. Call getCertificateInfo (writes tx, emits event with CID)
-    const uiConnected = UIManager.connect(verifierWallet.connect(provider));
-    const tx = await uiConnected.getCertificateInfo(certificateHash);
-    const receipt = await tx.wait();
+    const receipt = await enqueueTxForWallet(verifierWallet, (nonce) => {
+      const uiConnected = UIManager.connect(verifierWallet.connect(provider));
+      return uiConnected.getCertificateInfo(certificateHash, { nonce });
+    });
 
     // 5. Parse logs to extract the CID from CertificateLookup event
     const event = receipt.logs

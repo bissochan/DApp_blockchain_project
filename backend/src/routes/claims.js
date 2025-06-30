@@ -73,6 +73,10 @@ router.get("/pending/:companyId", (req, res) => {
     return res.status(403).json({ error: "Company registration was rejected" });
   }
 
+  if (company.approvalStatus === "removed") {
+    return res.status(403).json({ error: "Company has been removed from the whitelist" });
+  }
+
   const companyClaims = pendingClaims.filter(
     c => c.claim.companyId === companyId && c.status === "pending"
   );
