@@ -1,7 +1,7 @@
 const { expect, use } = require("chai");
-    const { ethers } = require("hardhat");
-    const fs = require("fs");
-    const path = require("path");
+const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
     describe("SCV_UI_manager", function () {
     let owner, user1, user2;
@@ -318,13 +318,21 @@ const { expect, use } = require("chai");
 
                 // Query the certificate info
                 const tx = await uiManager.connect(user1).getCertificateInfo(certificateHash);
-                await tx.wait();
+                const receipt = await tx.wait(); // Wait for the transaction to be mined
 
-                const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
+                expect(receipt).to.emit(uiManager, "CertificateQueriedCorrectly");
+
+                // Check if the transaction was successful
+                expect(receipt.status).to.equal(1); // 1 means success, 0 means failure
+
+                const [exists, info] = await uiManager.connect(user1).getCertificateInfoView(certificateHash);
+
+                // print the info for debugging
+                console.log("Certificate Info:", info);
 
                 expect(exists).to.be.true;
                 expect(info).to.include("Timestamp: ");
-                expect(info).to.include("Hash: ");
+                expect(info).to.include("Hash: ", certificateHash);
                 expect(info).to.include("CID: " + ipfsCid);
 
                 const userBalanceAfter = await uiManager.getUserTokenBalance(user1.address);
@@ -557,7 +565,7 @@ const { expect, use } = require("chai");
                 const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("some_certificate_hash"));
 
                 await expect(uiManager.connect(user1).getCertificateInfoView(certificateHash))
-                    .to.be.revertedWith("Only owner: not authorized");
+                    .to.be.revertedWith("Not authorized for this certificate");
             });
 
         });
