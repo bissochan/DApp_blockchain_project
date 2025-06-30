@@ -52,16 +52,15 @@ contract SCV_UI_manager is ISCV_UI_manager {
     event EntityWhitelisted(address indexed entity);
     event EntityRemovedFromWhitelist(address indexed entity);
     event StorageManagerUpdated(address indexed newStorageManager);
+    event TokenManagerUpdated(address indexed newTokenManager);
+
     event CertificateStored(
-        address indexed entity,
-        bytes32 certificateHash,
-        string ipfsCid
+        address indexed entity
     );
     event CertificateLookup(
-        address indexed entity,
-        string certificateHash,
-        string ipfsCid
+        address indexed entity
     );
+
     event TokensRewarded(
         address indexed entity,
         uint256 amount
@@ -180,7 +179,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
         require(certId > 0, "Certificate storage failed");
 
-        emit CertificateStored(_entity, _certificateHash, _ipfsCid);
+        emit CertificateStored(_entity);
 
         // Reward the entity with tokens for storing the certificate
         if (address(tokenManager) != address(0)) {
@@ -215,7 +214,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
 
         (bool exists, string memory cid) = storageManager.getCertificateInfoByHash(_certificateHash);
 
-        emit CertificateLookup(msg.sender, string(abi.encodePacked(_certificateHash)), cid);
+        emit CertificateLookup(msg.sender);
 
         // Add the certificate to the whitelist for the user
         certificateQueryWhitelist[msg.sender][_certificateHash] = true;
