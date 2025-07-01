@@ -100,9 +100,9 @@ const path = require("path");
             // CHECK THE RETURN of the function if it is true or a revert
             const result = await uiManager.connect(owner).setStorageManager(user1.address);
             // print the result of the function
-            console.log("Set Storage Manager Result:", result);
-            console.log("Storage Manager Address:", await uiManager.storageManager());
-            console.log("User1 Address:", user1.address);
+            // console.log("Set Storage Manager Result:", result);
+            // console.log("Storage Manager Address:", await uiManager.storageManager());
+            // console.log("User1 Address:", user1.address);
             expect(await uiManager.storageManager()).to.equal(user1.address);
         });
         
@@ -328,7 +328,7 @@ const path = require("path");
                 const [exists, info] = await uiManager.connect(user1).getCertificateInfoView(certificateHash);
 
                 // print the info for debugging
-                console.log("Certificate Info:", info);
+                // console.log("Certificate Info:", info);
 
                 expect(exists).to.be.true;
                 expect(info).to.include("Timestamp: ");

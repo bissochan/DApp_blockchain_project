@@ -25,8 +25,34 @@ describe("SCV_UI_manager", function () {
     storageManager = await StorageManager.deploy(await scvUIManager.getAddress());
     await storageManager.waitForDeployment();
 
+    // Ensure SCV_UI_manager is set as the owner of SCV_storage_manager
+    expect(await storageManager.owner()).to.equal(await scvUIManager.getAddress());
+
     // Set storage manager in UI manager
     await scvUIManager.connect(owner).setStorageManager(await storageManager.getAddress());
+
+    // Deploy SCV_token_manager with UI manager as owner
+    const TokenManager = await ethers.getContractFactory("SCV_token_manager");
+    const tokenManager = await TokenManager.deploy(
+        "SCV Token", 
+        "SCVT", 
+        0, 
+        1000, 
+        await scvUIManager.getAddress()
+    );
+    await tokenManager.waitForDeployment();
+
+    // Set token manager in UI manager
+    await scvUIManager.connect(owner).setTokenManager(await tokenManager.getAddress());
+
+    // Add owner to whitelist if not already added
+    if (!(await scvUIManager.isWhitelisted(owner.address))) {
+        await scvUIManager.addWhiteListEntity(owner.address);
+    }
+
+    // Mint tokens for entity1 to ensure sufficient balance for lookups
+    const TOKEN_PER_LOOKUP = 10n;
+    await scvUIManager.connect(owner).mintUserTokens(entity1.address, TOKEN_PER_LOOKUP * 10n); // Mint extra tokens for multiple lookups
   });
 
   describe("Deployment", function () {
@@ -128,239 +154,277 @@ describe("SCV_UI_manager", function () {
       ).to.be.revertedWith("Entity not in whitelist");
     });
   });
+
+  describe("Certificate Storage", function () {
+    const testHash = ethers.keccak256(ethers.toUtf8Bytes("test certificate"));
+    const testCid = "QmTest123456789";
+
+    beforeEach(async function () {
+      // Add entity1 to whitelist
+      await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+    });
+
+    it("Should allow whitelisted entity to store certificate", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("test certificate"));
+      const testCid = "QmTest123456789";
+
+      // Add entity1 to whitelist if not already added
+      if (!(await scvUIManager.isWhitelisted(entity1.address))) {
+        await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+      }
+
+      // Store certificate
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid)
+      )
+        .to.emit(scvUIManager, "CertificateStored")
+        .withArgs(entity1.address, testHash, testCid);
+
+      // Verify certificate was stored in storage manager
+      const [exists, info] = await scvUIManager.getCertificateInfoView(testHash);
+      expect(exists).to.be.true;
+      expect(info).to.include("CID: " + testCid);
+      expect(info).to.include("Timestamp:");
+      expect(info).to.include("Hash:");
+    });
+
+    it("Should return correct certificate ID", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("test certificate"));
+      const testCid = "QmTest123456789";
+
+      // Add entity1 to whitelist if not already added
+      if (!(await scvUIManager.isWhitelisted(entity1.address))) {
+        await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+      }
+
+      // Store certificate
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
+
+      // Verify certificate exists using SCV_UI_manager
+      const [exists, info] = await scvUIManager.getCertificateInfoView(testHash);
+      expect(exists).to.be.true;
+      expect(info).to.include("CID: " + testCid);
+      expect(info).to.include("Hash: 0x" + testHash.slice(2)); // Ensure 0x prefix is included
+    });
+
+    it("Should revert if non-whitelisted entity tries to store certificate", async function () {
+      await expect(
+        scvUIManager.connect(nonWhitelistedEntity).storeCertificate(
+          nonWhitelistedEntity.address, 
+          testHash, 
+          testCid
+        )
+      ).to.be.revertedWith("Only whitelisted entity: not authorized");
+    });
+
+    it("Should revert if entity address doesn't match sender", async function () {
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(entity2.address, testHash, testCid)
+      ).to.be.revertedWith("Entity mismatch");
+    });
+
+    it("Should revert if CID is empty", async function () {
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, "")
+      ).to.be.revertedWith("Empty CID");
+    });
+
+    it("Should revert if hash is zero", async function () {
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(
+          entity1.address, 
+          ethers.ZeroHash, 
+          testCid
+        )
+      ).to.be.revertedWith("Invalid hash");
+    });
+
+    it("Should revert if storage manager is not set", async function () {
+      // Deploy new contract without setting storage manager
+      const SCVUIManager = await ethers.getContractFactory("SCV_UI_manager");
+      const newContract = await SCVUIManager.deploy(owner.address);
+      await newContract.waitForDeployment();
+      
+      // Add entity to whitelist
+      await newContract.connect(owner).addWhiteListEntity(entity1.address);
+
+      await expect(
+        newContract.connect(entity1).storeCertificate(entity1.address, testHash, testCid)
+      ).to.be.revertedWith("Storage manager not set");
+    });
+
+    it("Should revert if trying to store duplicate certificate", async function () {
+      // Store certificate first time
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
+
+      // Try to store same certificate again
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, "QmDifferentCid")
+      ).to.be.revertedWith("Certificate already exists");
+    });
+  });
+
+  describe("Certificate Query Functions", function () {
+    const testHash = ethers.keccak256(ethers.toUtf8Bytes("query test certificate"));
+    const testCid = "QmQueryTest123";
+
+    beforeEach(async function () {
+      await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
+
+    });
+
+    it("Should return certificate info for existing certificate", async function () {
+      const result = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
+      const receipt = await result.wait(); // Wait for the transaction to be mined
+    
+      expect(receipt.status).to.equal(1);
+
+      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+
+      expect(exists).to.be.true;
+      expect(info).to.include("Timestamp: ");
+      expect(info).to.include("Hash: ", testHash);
+      expect(info).to.include("CID: " + testCid);
+    });
+
+    it("Should return false for non-existing certificate", async function () {
+      const nonExistentHash = ethers.keccak256(ethers.toUtf8Bytes("non-existent"));
+      await expect(
+        scvUIManager.connect(entity1).getCertificateInfo(nonExistentHash)
+      ).to.be.revertedWith("Certificate not found");
+    });
+
+    it("Should revert if storage manager not set", async function () {
+      const SCVUIManager = await ethers.getContractFactory("SCV_UI_manager");
+      const newContract = await SCVUIManager.deploy(owner.address);
+      await newContract.waitForDeployment();
+
+      await expect(
+        newContract.getCertificateInfo(testHash)
+      ).to.be.revertedWith("Storage manager not set");
+    });
+  });
+
+  describe("Storage Manager Authorization", function () {
+    it("Should only allow UI manager to add certificates to storage manager", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("direct test"));
+      const testCid = "QmDirectTest";
+
+      await expect(
+        storageManager.connect(entity1).addCertificate(testCid, testHash)
+      ).to.be.revertedWith("Not authorized");
+    });
+
+    it("Should only allow UI manager to query certificates from storage manager", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("query test"));
+
+      await expect(
+        storageManager.connect(entity1).getCertificateInfoByHash(testHash)
+      ).to.be.revertedWith("Not authorized");
+    });
+  });
+
+
+  describe("Integration Tests", function () {
+    it("Should handle complete workflow", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("integration test"));
+      const testCid = "QmIntegrationTest123";
+    
+      // 1. Add entity to whitelist
+      await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+    
+      // 2. Store certificate
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
+    
+      // 3. Verify certificate exists through UI manager
+      const result = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
+      const receipt = await result.wait(); // Wait for the transaction to be mined
+    
+      expect(receipt.status).to.equal(1);
+
+      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+
+      expect(exists).to.be.true;
+      expect(info).to.include(testCid);
+    
+      // 4. Remove entity from whitelist
+      await scvUIManager.connect(owner).removeWhiteListEntity(entity1.address);
+    
+      // 5. Verify entity can no longer store certificates
+      await expect(
+        scvUIManager.connect(entity1).storeCertificate(
+          entity1.address,
+          ethers.keccak256(ethers.toUtf8Bytes("should fail")),
+          "QmShouldFail"
+        )
+      ).to.be.revertedWith("Only whitelisted entity: not authorized");
+    
+      // 6. Verify existing certificate is still queryable
+      const res = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
+      const rec = await res.wait(); // Wait for the transaction to be mined
+    
+      expect(rec.status).to.equal(1);
+
+      const [stillExists] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+
+      expect(stillExists).to.be.true;
+    });
+
+    it("Should handle multiple entities and certificates", async function () {
+      const hash1 = ethers.keccak256(ethers.toUtf8Bytes("cert1"));
+      const hash2 = ethers.keccak256(ethers.toUtf8Bytes("cert2"));
+      const cid1 = "QmCert1";
+      const cid2 = "QmCert2";
+
+      // Add both entities to whitelist
+      await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+      await scvUIManager.connect(owner).addWhiteListEntity(entity2.address);
+
+      // Store certificates from both entities
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, hash1, cid1);
+      await scvUIManager.connect(entity2).storeCertificate(entity2.address, hash2, cid2);
+
+      // Query both certificates
+      const result1 = await scvUIManager.connect(entity1).getCertificateInfo(hash1);
+      const result2 = await scvUIManager.connect(entity2).getCertificateInfo(hash2);
+      const receipt1 = await result1.wait(); // Wait for the transaction to be mined
+      const receipt2 = await result2.wait(); // Wait for the transaction to be mined
+
+      expect(receipt1.status).to.equal(1);
+      expect(receipt2.status).to.equal(1);
+
+      const [exists1, info1] = await scvUIManager.connect(entity1).getCertificateInfoView(hash1);
+      const [exists2, info2] = await scvUIManager.connect(entity2).getCertificateInfoView(hash2);
+      
+      
+      expect(exists1).to.be.true;
+      expect(exists2).to.be.true;
+      expect(info1).to.include(cid1);
+      expect(info2).to.include(cid2);
+    });
+
+    it("Should maintain proper timestamps", async function () {
+      const testHash = ethers.keccak256(ethers.toUtf8Bytes("timestamp test"));
+      const testCid = "QmTimestampTest";
+
+      await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
+      
+      const blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
+      await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
+      
+      const result = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
+      const receipt = await result.wait(); // Wait for the transaction to be mined
+    
+      expect(receipt.status).to.equal(1);
+
+      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+
+      // info is a string, we need to parse it to extract the timestamp
+      expect(exists).to.be.true;
+      const timestampMatch = info.match(/Timestamp: (\d+)/);
+      const timestamp = timestampMatch ? parseInt(timestampMatch[1], 10) : 0;
+      expect(timestamp).to.be.gte(blockTimestamp);
+    });
+  });
 });
-
-//   describe("Certificate Storage", function () {
-//     const testHash = ethers.keccak256(ethers.toUtf8Bytes("test certificate"));
-//     const testCid = "QmTest123456789";
-
-//     beforeEach(async function () {
-//       // Add entity1 to whitelist
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
-//     });
-
-//     it("Should allow whitelisted entity to store certificate", async function () {
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid)
-//       )
-//         .to.emit(scvUIManager, "CertificateStored")
-//         .withArgs(entity1.address, testHash, testCid);
-
-//       // Verify certificate was stored in storage manager
-//       const cert = await storageManager.getCertificateInfoByHash(testHash);
-//       expect(cert.certificateHash).to.equal(testHash);
-//       expect(cert.ipfsCid).to.equal(testCid);
-//       expect(cert.timestamp).to.be.gt(0);
-//     });
-
-//     it("Should return correct certificate ID", async function () {
-//       // Calculate expected ID (hash of CID % 256)
-//       const expectedId = BigInt(ethers.keccak256(ethers.toUtf8Bytes(testCid))) % 256n;
-      
-//       // Store certificate and check returned value
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
-      
-//       // Since we can't directly access the return value from transaction, 
-//       // we verify the certificate exists
-//       const cert = await storageManager.getCertificateInfoByHash(testHash);
-//       expect(cert.certificateHash).to.equal(testHash);
-//     });
-
-//     it("Should revert if non-whitelisted entity tries to store certificate", async function () {
-//       await expect(
-//         scvUIManager.connect(nonWhitelistedEntity).storeCertificate(
-//           nonWhitelistedEntity.address, 
-//           testHash, 
-//           testCid
-//         )
-//       ).to.be.revertedWith("Not a certified entity");
-//     });
-
-//     it("Should revert if entity address doesn't match sender", async function () {
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(entity2.address, testHash, testCid)
-//       ).to.be.revertedWith("Entity mismatch");
-//     });
-
-//     it("Should revert if CID is empty", async function () {
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, "")
-//       ).to.be.revertedWith("Empty CID");
-//     });
-
-//     it("Should revert if hash is zero", async function () {
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(
-//           entity1.address, 
-//           ethers.ZeroHash, 
-//           testCid
-//         )
-//       ).to.be.revertedWith("Invalid hash");
-//     });
-
-//     it("Should revert if storage manager is not set", async function () {
-//       // Deploy new contract without setting storage manager
-//       const SCVUIManager = await ethers.getContractFactory("SCV_UI_manager");
-//       const newContract = await SCVUIManager.deploy(owner.address);
-//       await newContract.waitForDeployment();
-      
-//       // Add entity to whitelist
-//       await newContract.connect(owner).addWhiteListEntity(entity1.address);
-
-//       await expect(
-//         newContract.connect(entity1).storeCertificate(entity1.address, testHash, testCid)
-//       ).to.be.revertedWith("Storage manager not set");
-//     });
-
-//     it("Should revert if trying to store duplicate certificate", async function () {
-//       // Store certificate first time
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
-
-//       // Try to store same certificate again
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, "QmDifferentCid")
-//       ).to.be.revertedWith("Certificate already exists");
-//     });
-//   });
-// });
-//   describe("Certificate Query Functions", function () {
-//     const testHash = ethers.keccak256(ethers.toUtf8Bytes("query test certificate"));
-//     const testCid = "QmQueryTest123";
-
-//     beforeEach(async function () {
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
-//     });
-
-//     it("Should return certificate info for existing certificate", async function () {
-//       const [exists, info] = await scvUIManager.getCertificateInfo(testHash);
-      
-//       expect(exists).to.be.true;
-//       expect(info).to.include("CID: " + testCid);
-//       expect(info).to.include("Timestamp:");
-//       expect(info).to.include("Hash:");
-//     });
-
-//     it("Should return false for non-existing certificate", async function () {
-//       const nonExistentHash = ethers.keccak256(ethers.toUtf8Bytes("non-existent"));
-//       const [exists, info] = await scvUIManager.getCertificateInfo(nonExistentHash);
-      
-//       expect(exists).to.be.false;
-//       expect(info).to.equal("");
-//     });
-
-//     it("Should revert if storage manager not set", async function () {
-//       const SCVUIManager = await ethers.getContractFactory("SCV_UI_manager");
-//       const newContract = await SCVUIManager.deploy(owner.address);
-//       await newContract.waitForDeployment();
-
-//       await expect(
-//         newContract.getCertificateInfo(testHash)
-//       ).to.be.revertedWith("Storage manager not set");
-//     });
-//   });
-
-//   describe("Storage Manager Authorization", function () {
-//     it("Should only allow UI manager to add certificates to storage manager", async function () {
-//       const testHash = ethers.keccak256(ethers.toUtf8Bytes("direct test"));
-//       const testCid = "QmDirectTest";
-
-//       await expect(
-//         storageManager.connect(entity1).addCertificate(testCid, testHash)
-//       ).to.be.revertedWith("Not authorized");
-//     });
-
-//     it("Should only allow UI manager to query certificates from storage manager", async function () {
-//       const testHash = ethers.keccak256(ethers.toUtf8Bytes("query test"));
-
-//       await expect(
-//         storageManager.connect(entity1).getCertificateInfoByHash(testHash)
-//       ).to.be.revertedWith("Not authorized");
-//     });
-//   });
-
-//   describe("Integration Tests", function () {
-//     it("Should handle complete workflow", async function () {
-//       const testHash = ethers.keccak256(ethers.toUtf8Bytes("integration test"));
-//       const testCid = "QmIntegrationTest123";
-
-//       // 1. Add entity to whitelist
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
-
-//       // 2. Store certificate
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
-
-//       // 3. Verify certificate exists in storage manager
-//       const cert = await storageManager.getCertificateInfoByHash(testHash);
-//       expect(cert.certificateHash).to.equal(testHash);
-//       expect(cert.ipfsCid).to.equal(testCid);
-
-//       // 4. Query certificate info through UI manager
-//       const [exists, info] = await scvUIManager.getCertificateInfo(testHash);
-//       expect(exists).to.be.true;
-//       expect(info).to.include(testCid);
-
-//       // 5. Remove entity from whitelist
-//       await scvUIManager.connect(owner).removeWhiteListEntity(entity1.address);
-
-//       // 6. Verify entity can no longer store certificates
-//       await expect(
-//         scvUIManager.connect(entity1).storeCertificate(
-//           entity1.address, 
-//           ethers.keccak256(ethers.toUtf8Bytes("should fail")), 
-//           "QmShouldFail"
-//         )
-//       ).to.be.revertedWith("Not a certified entity");
-
-//       // 7. But existing certificate should still be queryable
-//       const [stillExists] = await scvUIManager.getCertificateInfo(testHash);
-//       expect(stillExists).to.be.true;
-//     });
-
-//     it("Should handle multiple entities and certificates", async function () {
-//       const hash1 = ethers.keccak256(ethers.toUtf8Bytes("cert1"));
-//       const hash2 = ethers.keccak256(ethers.toUtf8Bytes("cert2"));
-//       const cid1 = "QmCert1";
-//       const cid2 = "QmCert2";
-
-//       // Add both entities to whitelist
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity2.address);
-
-//       // Store certificates from both entities
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, hash1, cid1);
-//       await scvUIManager.connect(entity2).storeCertificate(entity2.address, hash2, cid2);
-
-//       // Verify both certificates are stored
-//       const cert1 = await storageManager.getCertificateInfoByHash(hash1);
-//       const cert2 = await storageManager.getCertificateInfoByHash(hash2);
-      
-//       expect(cert1.certificateHash).to.equal(hash1);
-//       expect(cert1.ipfsCid).to.equal(cid1);
-//       expect(cert2.certificateHash).to.equal(hash2);
-//       expect(cert2.ipfsCid).to.equal(cid2);
-
-//       // Query both certificates
-//       const [exists1, info1] = await scvUIManager.getCertificateInfo(hash1);
-//       const [exists2, info2] = await scvUIManager.getCertificateInfo(hash2);
-      
-//       expect(exists1).to.be.true;
-//       expect(exists2).to.be.true;
-//       expect(info1).to.include(cid1);
-//       expect(info2).to.include(cid2);
-//     });
-
-//     it("Should maintain proper timestamps", async function () {
-//       const testHash = ethers.keccak256(ethers.toUtf8Bytes("timestamp test"));
-//       const testCid = "QmTimestampTest";
-
-//       await scvUIManager.connect(owner).addWhiteListEntity(entity1.address);
-      
-//       const blockTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
-//       await scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid);
-      
-//       const cert = await storageManager.getCertificateInfoByHash(testHash);
-//       expect(cert.timestamp).to.be.gte(blockTimestamp);
-//     });
-//   });
-// });
