@@ -39,7 +39,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
     uint256 public constant TOKEN_PER_LOOKUP = 10; // Example token reward for each lookup
     uint256 public constant TOKEN_INITIAL_SUPPLY = 1000000; // Initial token supply for the contract
     uint256 public constant TOKEN_INITIAL_PER_USER = 100; // Initial token balance for the users
-    uint256 public constant TOKEN_PER_ETHER = 10000; // Example token reward for each ether sent to the contract
+    uint256 public constant TOKEN_PER_ETHER = 10000; // arbitrary token reward for each ether sent to the contract
     uint256 public constant TOKEN_PER_ETHER_MIN = 0.01 ether; // Minimum ether to buy tokens
     uint256 public constant TOKEN_INCREASE_SUPPLY_OF = 1000; // Amount of tokens to increase supply by
 

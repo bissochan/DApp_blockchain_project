@@ -51,7 +51,7 @@ contract SCV_storage_manager is ISCVStorageManager {
     mapping(bytes32 => CertificateInfo) private certificateList;
 
     // Event emitted when a certificate is stored
-    event CertificateStored(string cid, bytes32 certHash, uint256 timestamp);
+    event CertificateStored(string memory comment);
 
     function addCertificate(string memory _cid, bytes32 _certHash) public onlyOwner returns (uint256) {
         require(bytes(_cid).length > 0, "Invalid CID");
@@ -71,11 +71,10 @@ contract SCV_storage_manager is ISCVStorageManager {
         num_certificates++;
 
         // Emit an event for certificate storage (optional, but recommended)
-        emit CertificateStored(_cid, _certHash, block.timestamp);
+        // since emit are public we don't publish also the hash 
+        emit CertificateStored("Certificate stored successfully");
 
-        // TODO checks this implementation
-        // Return a pseudo ID (e.g., hash of CID % 256)
-        return uint256(keccak256(abi.encodePacked(_cid))) % 256;
+        return num_certificates - 1; // Return the index of the newly added certificate
     }
 
     function getCertificateInfoByHash(bytes32 _certHash) public view onlyOwner returns (bool, string memory) {

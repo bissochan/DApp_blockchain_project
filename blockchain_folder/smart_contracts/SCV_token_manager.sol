@@ -6,6 +6,9 @@ interface IToken {
     function mint(address _account, uint256 _amount) external returns (bool);
     function burn(address account, uint256 amount) external returns (bool);
     event Mint(address account, uint256 amount);
+    event Burn(uint256 amount);
+    event DecreaseTotalSupply(uint256 amount);
+    event IncreaseTotalSupply(uint256 amount);
 }
 
 // ERC-20 standard interface
@@ -17,16 +20,16 @@ interface IERC20 {
     function balanceOf(address who) external view returns (uint256);
     function transfer(address to, uint256 value) external returns (bool);
 
-    // approval and allowance functions are just for compatibility with ERC-20 standard 
+    // approval and allowance functions are for compatibility with ERC-20 standard 
     function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 value) external returns (bool);
 
-    // transferFrom is used to transfer tokens from one address to another, owner has the right to transfer tokens from any address
+    // transferFrom is used to transfer tokens from one address to another,
+    // owner (uiManager) has the right to transfer tokens from any address
     function transferFrom(address from, address to, uint256 value) external returns (bool);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event IncreaseTotalSupply(uint256 amount);
 }
 
 contract SCV_token_manager is IERC20, IToken {
@@ -152,7 +155,4 @@ contract SCV_token_manager is IERC20, IToken {
         emit DecreaseTotalSupply(totalSupply_);
         return true;
     }
-    
-    event Burn(uint256 amount);
-    event DecreaseTotalSupply(uint256 amount);
 }
