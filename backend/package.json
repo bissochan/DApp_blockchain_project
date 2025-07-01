@@ -4,10 +4,13 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon --ignore fake_ipfs/ index.js"
+    "dev": "nodemon --ignore fake_ipfs/ index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "jest": "^30.0.3",
+    "nodemon": "^3.1.10",
+    "supertest": "^7.1.1"
   },
   "dependencies": {
     "cors": "^2.8.5",

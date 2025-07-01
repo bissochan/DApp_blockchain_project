@@ -2,8 +2,8 @@
 import { useState } from "react";
 import CertifierList from "../components/CertifierList";
 import Navbar from "../components/Navbar";
+import RequestWhitelistForm from "../components/RequestWhitelistForm";
 import UserSwitcher from "../components/UserSwitcher";
-import WhitelistRequestForm from "../components/WhitelistRequestForm";
 
 
 function AdminDashboard() {
@@ -27,7 +27,7 @@ function AdminDashboard() {
         />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <WhitelistRequestForm currentUser={currentUser} />
+          <RequestWhitelistForm currentUser={currentUser} />
           <CertifierList currentUser={currentUser} />
         </div>
       </div>

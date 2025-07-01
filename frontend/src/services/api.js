@@ -36,6 +36,7 @@ export const postExperienceCertification = ({ claimId, companyUsername, isApprov
 export const checkHash = ({ verifierUsername, certificateHash }) =>
   API.post("/verify/verify_certificate", { verifierUsername, certificateHash });
 export const fundUser = ({ username, amount }) => API.post("/token/fund_user", { username, amount });
+export const getUserTokenBalance = (data) => API.post("/token/get_balance", data);
 
 // Admin endpoints
 export const requestWhitelist = (data) => API.post("/auth/request_whitelist", data);

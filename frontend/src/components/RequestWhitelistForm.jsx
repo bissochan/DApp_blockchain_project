@@ -1,50 +1,93 @@
-import { useState } from "react";
-import { requestWhitelist } from "../services/api";
+import { useEffect, useState } from "react";
+import { approveWhitelistRequest, getPendingWhitelistRequests, rejectWhitelistRequest } from "../services/api";
 
 function RequestWhitelistForm({ currentUser }) {
-  const [successMessage, setSuccessMessage] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchRequests = async () => {
+      try {
+        const response = await getPendingWhitelistRequests();
+        setRequests(response.data);
+      } catch (err) {
+        setError("Errore durante il caricamento delle richieste.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser?.role === "admin") fetchRequests();
+  }, [currentUser]);
+
+  const handleRequest = async (requestId, isApproved) => {
     setError(null);
     setSuccessMessage(null);
-    setLoading(true);
-
+    setProcessingId(requestId);
     try {
-      const response = await requestWhitelist({ username: currentUser.username });
-      setSuccessMessage("Richiesta di whitelist inviata con successo!");
+      const response = isApproved
+        ? await approveWhitelistRequest({ requestId })
+        : await rejectWhitelistRequest({ requestId });
+      setRequests(requests.filter((req) => req.requestId !== requestId));
+      setSuccessMessage(
+        isApproved
+          ? "Richiesta approvata con successo."
+          : "Richiesta rifiutata correttamente."
+      );
     } catch (err) {
-      setError(err.response?.data?.error || "Errore durante l'invio della richiesta.");
+      setError("Errore durante l'elaborazione della richiesta.");
     } finally {
-      setLoading(false);
+      setProcessingId(null);
     }
   };
 
-  if (currentUser?.role !== "candidate") {
-    return null; // Il form è visibile solo ai lavoratori
+  if (currentUser?.role !== "admin") {
+    return <p className="text-red-500 p-6">Accesso non autorizzato.</p>;
   }
+
+  if (loading) return <p className="p-6">Caricamento...</p>;
+  if (error) return <p className="text-red-500 p-6">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Richiedi Whitelist come Certificatore</h2>
+      <h2 className="text-xl font-semibold mb-4">Richieste di Whitelist</h2>
       {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <p className="mb-4 text-gray-600">
-          Invia una richiesta per diventare un certificatore. L'admin la esaminerà.
-        </p>
-        <button
-          type="submit"
-          disabled={loading}
-          className={`bg-primary text-white px-4 py-2 rounded hover:bg-blue-700 ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {loading ? "Invio in corso..." : "Invia Richiesta"}
-        </button>
-      </form>
+      {requests.length === 0 ? (
+        <p>Nessuna richiesta trovata.</p>
+      ) : (
+        <div className="space-y-4">
+          {requests.map((req) => (
+            <div
+              key={req.requestId}
+              className="border-b pb-2 flex justify-between items-center"
+            >
+              <div>
+                <h3 className="font-semibold">Utente: {req.username}</h3>
+                <p className="text-sm text-gray-600">
+                  Wallet: {req.walletAddress}
+                </p>
+              </div>
+              <div className="space-x-2">
+                <button
+                  onClick={() => handleRequest(req.requestId, true)}
+                  className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+                >
+                  Approva
+                </button>
+                <button
+                  onClick={() => handleRequest(req.requestId, false)}
+                  className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
+                >
+                  Rifiuta
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

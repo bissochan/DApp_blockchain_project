@@ -159,6 +159,22 @@ You can run each step manually or use the automated one-liner.
    ```bash
    npm start
    ```
+
+### Backend Testing
+
+The backend includes automated tests written with Jest and Supertest. These tests validate the REST API functionality and simulate smart contract behavior using mocks.
+
+All test files are located in:
+```bash
+backend/test
+```
+
+To run all tests:
+```bash
+cd backend
+npm test
+```
+
 ---
 
 ## Frontend Setup

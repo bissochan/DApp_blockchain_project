@@ -41,7 +41,7 @@ export function enqueueTxForWallet(wallet, fnFactory) {
         throw new Error("Transaction failed or not mined");
       }
 
-      console.log("✓ Tx successful:", receipt.transactionHash);
+      console.log("✓ Tx successful:", receipt.hash);
       return receipt;
     } catch (error) {
       // Rollback nonce on failure
