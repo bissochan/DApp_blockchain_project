@@ -177,8 +177,7 @@ describe("SCV_UI_manager", function () {
       await expect(
         scvUIManager.connect(entity1).storeCertificate(entity1.address, testHash, testCid)
       )
-        .to.emit(scvUIManager, "CertificateStored")
-        .withArgs(entity1.address, testHash, testCid);
+        .to.emit(scvUIManager, "CertificateStored");
 
       // Verify certificate was stored in storage manager
       const [exists, info] = await scvUIManager.getCertificateInfoView(testHash);

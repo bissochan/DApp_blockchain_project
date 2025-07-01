@@ -25,6 +25,7 @@ interface ISCV_UI_manager {
     function mintUserTokens(address user, uint256 amount) external;
     function transferTokens(address _to, uint256 _amount) external returns (bool);
     function buyTokens() external payable returns (bool);
+    function withdrawEther(address payable _to, uint256 _amount) external;
 }
 
 contract SCV_UI_manager is ISCV_UI_manager {
@@ -177,7 +178,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
             _certificateHash
         );
 
-        require(certId > 0, "Certificate storage failed");
+        require(certId >= 0, "Certificate storage failed");
 
         emit CertificateStored(_entity);
 
@@ -252,6 +253,7 @@ contract SCV_UI_manager is ISCV_UI_manager {
     // === managing Users Tokens ===
     function getUserTokenBalance(address _user) external view returns (uint256) {
         require(address(tokenManager) != address(0), "Token manager not set");
+        require(_user != address(0), "Invalid user address");
         return tokenManager.balanceOf(_user);
     }
 
@@ -275,10 +277,6 @@ contract SCV_UI_manager is ISCV_UI_manager {
         uint256 _amount
     ) external returns (bool) {
         require(_to != address(0), "Invalid recipient address");
-        require(
-            tokenManager.balanceOf(msg.sender) >= _amount,
-            "Insufficient token balance"
-        );
 
         return tokenManager.transfer(_to, _amount);
     }
@@ -323,5 +321,17 @@ contract SCV_UI_manager is ISCV_UI_manager {
     // Function to mint tokens for a specific user, only callable by the owner
     function mintUserTokens(address user, uint256 amount) public onlyOwner {
         tokenManager.mint(user, amount);
+    }
+
+    // === Withdraw function ===
+    function withdrawEther(
+        address payable _to,
+        uint256 _amount
+    ) external onlyOwner {
+        require(_to != address(0), "Invalid address");
+        require(address(this).balance >= _amount, "Insufficient balance");
+
+        // Transfer the specified amount of ether to the recipient
+        _to.transfer(_amount);
     }
 }

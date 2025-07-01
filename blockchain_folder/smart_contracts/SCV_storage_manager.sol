@@ -51,7 +51,7 @@ contract SCV_storage_manager is ISCVStorageManager {
     mapping(bytes32 => CertificateInfo) private certificateList;
 
     // Event emitted when a certificate is stored
-    event CertificateStored(string memory comment);
+    event CertificateStored(string comment);
 
     function addCertificate(string memory _cid, bytes32 _certHash) public onlyOwner returns (uint256) {
         require(bytes(_cid).length > 0, "Invalid CID");
@@ -98,19 +98,21 @@ contract SCV_storage_manager is ISCVStorageManager {
     }
 
     // External helper to use try-catch (only external calls support try-catch)
-    function buildCertInfoString(CertificateInfo memory cert) external pure returns (string memory) {
-        return string(
-            abi.encodePacked(
-                "Timestamp: ",
-                uint2str(cert.timestamp),
-                ", Hash: ",
-                bytes32ToHexString(cert.certificateHash),
-                ", CID: ",
-                cert.ipfsCid
-            )
-        );
-    }
+    // function buildCertInfoString(CertificateInfo memory cert) external pure returns (string memory) {
+    //     return string(
+    //         abi.encodePacked(
+    //             "Timestamp: ",
+    //             uint2str(cert.timestamp),
+    //             ", Hash: ",
+    //             bytes32ToHexString(cert.certificateHash),
+    //             ", CID: ",
+    //             cert.ipfsCid
+    //         )
+    //     );
+    // }
 
+    // Function to get all certificates as a string, Debugging purposes or for admin use
+    // This function returns a string with all certificates' information
     function getAllCertificates() public view onlyOwner returns (string memory) {
         if (num_certificates == 0) {
             return "No certificates found";

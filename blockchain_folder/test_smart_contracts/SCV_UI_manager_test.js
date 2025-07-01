@@ -154,7 +154,67 @@ const path = require("path");
 
                 await uiManager.connect(owner).removeWhiteListEntity(user1.address);
                 expect(await uiManager.certifiedWhitelisted(user1.address)).to.be.false;
-        });
+            });
+
+            it("should allow owner to withdraw Ether from the contract", async function () {
+                const ethersAmount = 1.0;
+                const amountToSend = ethers.parseEther(ethersAmount.toString()); // 1 ETH
+
+                // User1 buys tokens to send Ether to the contract
+                await uiManager.connect(user1).buyTokens({ value: amountToSend });
+
+                // Check contract balance before withdrawal
+                const contractBalanceBefore = await ethers.provider.getBalance(uiManager.getAddress());
+
+                const amountToWithdraw = amountToSend; // Amount to withdraw
+                expect(contractBalanceBefore).to.equal(amountToWithdraw); // Contract balance should equal the amount
+
+                // Owner withdraws Ether
+                const tx = await uiManager.connect(owner).withdrawEther(owner.address, amountToWithdraw);
+                await tx.wait();
+
+                // Check contract balance after withdrawal
+                const contractBalanceAfter = await ethers.provider.getBalance(uiManager.getAddress());
+                
+                expect(contractBalanceAfter).to.equal(0n); // Contract balance should be zero after withdrawal
+
+                // Check owner's balance after withdrawal
+                const ownerBalanceAfter = await ethers.provider.getBalance(owner.address);
+                
+                expect(ownerBalanceAfter).to.be.gt(0n); // Owner's balance should increase
+            });
+
+            it("should not allow non-owner to withdraw Ether from the contract", async function () {
+                const ethersAmount = 1.0;
+                const amountToSend = ethers.parseEther(ethersAmount.toString()); // 1 ETH
+
+                // User1 buys tokens to send Ether to the contract
+                await uiManager.connect(user1).buyTokens({ value: amountToSend });
+
+                // Attempt to withdraw Ether as a non-owner
+                await expect(
+                    uiManager.connect(user1).withdrawEther(user1.address, amountToSend)
+                ).to.be.revertedWith("Only owner: not authorized");
+            });
+
+            it("should not allow withdrawing more Ether than the contract balance", async function () {
+                const ethersAmount = 1.0;
+                const amountToSend = ethers.parseEther(ethersAmount.toString()); // 1 ETH
+
+                // User1 buys tokens to send Ether to the contract
+                await uiManager.connect(user1).buyTokens({ value: amountToSend });
+
+                // Attempt to withdraw more Ether than the contract balance
+                await expect(
+                    uiManager.connect(owner).withdrawEther(owner.address, amountToSend + 1n)
+                ).to.be.revertedWith("Insufficient balance");
+            });
+
+            it("should not allow adding zero address to whitelist", async function () {
+                await expect(
+                    uiManager.connect(owner).addWhiteListEntity(ethers.ZeroAddress)
+                ).to.be.revertedWith("Invalid address");
+            });
         });
 
         describe("Certificate Publishing", function () {
@@ -179,7 +239,7 @@ const path = require("path");
                 expect(exists).to.be.true;
                 expect(info).to.include("CID: " + ipfsCid);
                 expect(info).to.include("Timestamp:");
-                expect(info).to.include("Hash:");
+                expect(info).to.include("Hash:", certificateHash);
             });
 
             it("should not allow non-whitelisted entity to store certificate", async function () {
@@ -374,6 +434,19 @@ const path = require("path");
                     uiManager.connect(user1).getCertificateInfo(nonExistentCertificateHash)
                 ).to.be.revertedWith("Certificate not found");
             });
+
+            it("should allow only owner to see all the certificates", async function () {
+                await expect(
+                    uiManager.connect(user1).getAllCertificates()
+                ).to.be.revertedWith("Only owner: not authorized");
+            });
+
+            it("should allow owner to see all the certificates", async function () {
+                // should return "No certificates found"
+                const certificates = await uiManager.connect(owner).getAllCertificates();
+                expect(certificates).to.be.equal("No certificates found");
+            });
+
         });
 
         describe("Token Management", function () {
@@ -403,6 +476,10 @@ const path = require("path");
 
                 await expect(
                     uiManager.connect(user1).mintUserTokens(user2.address, mintAmount)
+                ).to.be.revertedWith("Only owner: not authorized");
+
+                await expect(
+                    tokenManager.connect(user1).mint(user2.address, mintAmount)
                 ).to.be.revertedWith("Only owner: not authorized");
             });
 
@@ -446,6 +523,10 @@ const path = require("path");
                 await expect(
                     uiManager.connect(user1).burnUserTokens(user2.address, burnAmount)
                 ).to.be.revertedWith("Only owner: not authorized");
+
+                await expect(
+                    tokenManager.connect(user1).burn(user2.address, burnAmount)
+                ).to.be.revertedWith("Only owner: not authorized");
             });
 
             it("should not allow burning tokens from the zero address", async function () {
@@ -455,7 +536,186 @@ const path = require("path");
                     uiManager.connect(owner).burnUserTokens(ethers.ZeroAddress, burnAmount)
                 ).to.be.revertedWith("Invalid address");
             });
+
+            // function transfer(address to, uint256 amount) external override returns (bool) {
+            //     require(to != address(0), "Invalid address");
+            //     require(to != msg.sender, "Cannot transfer to self");
+            //     require(balances[msg.sender] >= amount, "Insufficient balance");
+
+            //     _transfer(msg.sender, to, amount);
+            //     return true;
+            // }
+            it("should allow users to transfer tokens", async function () {
+                const transferAmount = 30n;
+
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await tokenManager.connect(user1).transfer(user2.address, transferAmount);
+                const user1BalanceAfter = await uiManager.getUserTokenBalance(user1.address);
+                const user2BalanceAfter = await uiManager.getUserTokenBalance(user2.address);
+
+                expect(user1BalanceAfter).to.equal(user1BalanceBefore - transferAmount);
+                expect(user2BalanceAfter).to.equal(transferAmount); // user2 should receive the transferred tokens
+            });
+
+            it("should not allow transferring tokens to the zero address", async function () {
+                const transferAmount = 30n;
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+                await expect(
+                    tokenManager.connect(user1).transfer(ethers.ZeroAddress, transferAmount)
+                ).to.be.revertedWith("Invalid address");
+            });
+
+            it("should not allow transferring tokens to self", async function () {
+                const transferAmount = 30n;
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await expect(
+                    tokenManager.connect(user1).transfer(user1.address, transferAmount)
+                ).to.be.revertedWith("Cannot transfer to self");
+            });
+
+            it("should not allow transferring more tokens than balance", async function () {
+                const transferAmount = 1000n; // More than the initial supply
+
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await expect(
+                    tokenManager.connect(user1).transfer(user2.address, transferAmount)
+                ).to.be.revertedWith("Insufficient balance");
+            });
+
+            it("should not allow admin to arbitrary transfer tokens on behalf of a user, only within contract mechanics", async function () {
+                const transferAmount = 50n;
+
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await expect(
+                    tokenManager.connect(owner).transferFrom(user1.address, user2.address, transferAmount)
+                ).to.be.revertedWith("Only owner: not authorized");
+            });
+
+            it("should not allow non-owner to transfer tokens on behalf of a user", async function () {
+                const transferAmount = 50n;
+
+                // Ensure user1 has enough tokens to transfer
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < transferAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await expect(
+                    tokenManager.connect(user2).transferFrom(user1.address, user2.address, transferAmount)
+                ).to.be.revertedWith("Only owner: not authorized");
+            });
+
+            it("should allow users to check their token balance", async function () {
+                const user1Balance = await uiManager.getUserTokenBalance(user1.address);
+                expect(user1Balance).to.be.a("bigint"); // Check if the balance is a bigint
+                expect(user1Balance).to.be.gte(0n); // Balance should be non-negative
+            });
+
+            it("should allow users to check another user's token balance", async function () {
+                const user1Balance = await uiManager.getUserTokenBalance(user1.address);
+                const user2Balance = await uiManager.getUserTokenBalance(user2.address);
+
+                expect(user1Balance).to.be.a("bigint"); // Check if the balance is a bigint
+                expect(user2Balance).to.be.a("bigint"); // Check if the balance is a bigint
+                expect(user1Balance).to.be.gte(0n); // Balance should be non-negative
+                expect(user2Balance).to.be.gte(0n); // Balance should be non-negative
+            });
+            it("should not allow querying token balance of the zero address", async function () {
+                await expect(
+                    uiManager.getUserTokenBalance(ethers.ZeroAddress)
+                ).to.be.revertedWith("Invalid user address");
+            });
+
+            //          function approve(address spender, uint256 amount) external override returns (bool) {
+            //     require(spender != address(0), "Invalid address");
+
+            //     allowed[msg.sender][spender] = amount;
+            //     emit Approval(msg.sender, spender, amount);
+            //     return true;
+            // }
+
+            it("should allow users to approve token spending", async function () {
+                const approveAmount = 50n; // Approve 50 tokens
+
+                // Ensure user1 has enough tokens to approve
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < approveAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                const tx = await tokenManager.connect(user1).approve(user2.address, approveAmount);
+                const receipt = await tx.wait(); // Wait for the transaction to be mined
+
+                expect(receipt).to.emit(tokenManager, "Approval")
+                    .withArgs(user1.address, user2.address, approveAmount);
+
+                const allowance = await tokenManager.allowance(user1.address, user2.address);
+                expect(allowance).to.equal(approveAmount);
+            });
+
+            it("should not allow approving token spending to the zero address", async function () {
+                const approveAmount = 50n; // Approve 50 tokens
+
+                // Ensure user1 has enough tokens to approve
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < approveAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await expect(
+                    tokenManager.connect(user1).approve(ethers.ZeroAddress, approveAmount)
+                ).to.be.revertedWith("Invalid address");
+            });
+
+            it("should allow users to check their token allowance", async function () {
+                const approveAmount = 50n; // Approve 50 tokens
+
+                // Ensure user1 has enough tokens to approve
+                let user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address);
+                if (user1BalanceBefore < approveAmount) {
+                    await uiManager.connect(owner).mintUserTokens(user1.address, 100n); // Mint 100 tokens for testing
+                }
+                user1BalanceBefore = await uiManager.getUserTokenBalance(user1.address); // Re-fetch balance after minting
+
+                await tokenManager.connect(user1).approve(user2.address, approveAmount);
+
+                const allowance = await tokenManager.allowance(user1.address, user2.address);
+                expect(allowance).to.equal(approveAmount);
+            });
         });
+
 
         describe("New User", function () {
             // when a new user is added, it receives some tokens as a welcome gift

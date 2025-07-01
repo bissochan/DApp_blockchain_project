@@ -56,7 +56,7 @@ contract SCV_token_manager is IERC20, IToken {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Not owner");
+        require(msg.sender == owner, "Only owner: not authorized");
         _;
     }
 
@@ -109,7 +109,7 @@ contract SCV_token_manager is IERC20, IToken {
         require(from != address(0), "Invalid from address");
         require(to != address(0), "Invalid to address");
         require(to != from, "Cannot transfer to self");
-        require(msg.sender == owner || allowed[from][msg.sender] >= amount, "Not authorized");
+        require(msg.sender == owner || allowed[from][msg.sender] >= amount, "Only owner: not authorized");
         require(balances[from] >= amount, "Insufficient balance");
 
         if (msg.sender != owner) {
