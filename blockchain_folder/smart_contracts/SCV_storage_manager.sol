@@ -87,7 +87,7 @@ contract SCV_storage_manager is ISCVStorageManager {
             abi.encodePacked(
                 "Timestamp: ",
                 uint2str(cert.timestamp),
-                ", Hash: ",
+                ", Hash: 0x", // Add 0x prefix
                 bytes32ToHexString(cert.certificateHash),
                 ", CID: ",
                 cert.ipfsCid
