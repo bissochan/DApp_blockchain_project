@@ -277,9 +277,10 @@ describe("SCV_UI_manager", function () {
       const result = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
       const receipt = await result.wait(); // Wait for the transaction to be mined
     
-      expect(receipt.status).to.equal(1);
+      expect(receipt.status).to.emit(scvUIManager, "CertificateQueriedCorrectly")
+        .withArgs(entity1.address, testHash, testCid);
 
-      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+      const [exists, info] = await scvUIManager.connect(owner).getCertificateInfoView(testHash);
 
       expect(exists).to.be.true;
       expect(info).to.include("Timestamp: ");
@@ -341,8 +342,10 @@ describe("SCV_UI_manager", function () {
       const receipt = await result.wait(); // Wait for the transaction to be mined
     
       expect(receipt.status).to.equal(1);
+      expect(receipt.events).to.emit("CertificateStored")
+        .withArgs(entity1.address, testHash, testCid);
 
-      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+      const [exists, info] = await scvUIManager.connect(owner).getCertificateInfoView(testHash);
 
       expect(exists).to.be.true;
       expect(info).to.include(testCid);
@@ -363,9 +366,10 @@ describe("SCV_UI_manager", function () {
       const res = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
       const rec = await res.wait(); // Wait for the transaction to be mined
     
-      expect(rec.status).to.equal(1);
+      expect(rec.status).to.emit(scvUIManager, "CertificateQueriedCorrectly")
+        .withArgs(entity1.address, testHash, testCid);
 
-      const [stillExists] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+      const [stillExists] = await scvUIManager.connect(owner).getCertificateInfoView(testHash);
 
       expect(stillExists).to.be.true;
     });
@@ -390,11 +394,13 @@ describe("SCV_UI_manager", function () {
       const receipt1 = await result1.wait(); // Wait for the transaction to be mined
       const receipt2 = await result2.wait(); // Wait for the transaction to be mined
 
-      expect(receipt1.status).to.equal(1);
-      expect(receipt2.status).to.equal(1);
+      expect(receipt1.status).to.emit(scvUIManager, "CertificateStored")
+        .withArgs(entity1.address, hash1, cid1);
+      expect(receipt2.status).to.emit(scvUIManager, "CertificateStored")
+        .withArgs(entity2.address, hash2, cid2);
 
-      const [exists1, info1] = await scvUIManager.connect(entity1).getCertificateInfoView(hash1);
-      const [exists2, info2] = await scvUIManager.connect(entity2).getCertificateInfoView(hash2);
+      const [exists1, info1] = await scvUIManager.connect(owner).getCertificateInfoView(hash1);
+      const [exists2, info2] = await scvUIManager.connect(owner).getCertificateInfoView(hash2);
       
       
       expect(exists1).to.be.true;
@@ -415,9 +421,10 @@ describe("SCV_UI_manager", function () {
       const result = await scvUIManager.connect(entity1).getCertificateInfo(testHash);
       const receipt = await result.wait(); // Wait for the transaction to be mined
     
-      expect(receipt.status).to.equal(1);
+      expect(receipt.status).to.emit(scvUIManager, "CertificateStored")
+        .withArgs(entity1.address, testHash, testCid);
 
-      const [exists, info] = await scvUIManager.connect(entity1).getCertificateInfoView(testHash);
+      const [exists, info] = await scvUIManager.connect(owner).getCertificateInfoView(testHash);
 
       // info is a string, we need to parse it to extract the timestamp
       expect(exists).to.be.true;

@@ -3,7 +3,12 @@
 
 pragma solidity >=0.8.2 <0.9.0;
 
-
+// Interface for SCV storage manager
+// This interface defines the functions for managing certificates in the SCV storage manager
+// It includes functions to add certificates, retrieve certificate information by hash,
+// get all certificates, and get the count of certificates
+// The interface ensures that any contract implementing it will have these functions
+// This allows for easy interaction with the SCV storage manager from other contracts or applications
 interface ISCVStorageManager {
     function addCertificate(string memory _cid, bytes32 _certHash) external returns (uint);
     function getCertificateInfoByHash(bytes32 _certHash) external view returns (bool, string memory);
@@ -11,6 +16,12 @@ interface ISCVStorageManager {
     function getCertificateCount() external view returns (uint256);
 }
 
+// SCV_storage_manager contract
+// This contract implements the ISCVStorageManager interface
+// It manages the storage of certificates, allowing the owner (e.g., SCV_UI_manager)
+// to add certificates, retrieve certificate information by hash, and get all certificates
+// The contract uses a mapping to store certificate information and an array to keep track of certificate IDs
+// The owner of the contract is set during deployment, and only the owner can call certain functions
 contract SCV_storage_manager is ISCVStorageManager {
     // Manager address (e.g., SCV_UI_manager)
     address public owner;
@@ -18,6 +29,11 @@ contract SCV_storage_manager is ISCVStorageManager {
     bytes32[] private certificateIds;
     uint256 public num_certificates;
 
+    // Constructor to initialize the contract with the manager's address
+    // This constructor sets the owner of the contract to the provided manager address
+    // It also initializes the number of certificates to 0 and sets up an array for certificate IDs
+    // The array is initialized with a fixed size for simplicity, and all IDs are set to 0
+    // The certificate list is initialized with a default entry for the zero hash
     constructor(address _manager) {
         owner = _manager;
         require(owner != address(0), "Invalid manager address");
@@ -37,22 +53,38 @@ contract SCV_storage_manager is ISCVStorageManager {
         });
     }
 
+    // Modifier to restrict access to the owner (e.g., SCV_UI_manager)
+    // This modifier checks if the caller is the owner of the contract
     modifier onlyOwner() {
         require(msg.sender == owner, "Not authorized");
         _;
     }
 
+    // Structure to hold certificate information
+    // This structure contains the certificate hash, IPFS CID, and timestamp
+    // It is used to store and retrieve certificate information efficiently
+    // The `certificateHash` is a unique identifier for the certificate
     struct CertificateInfo {
         bytes32 certificateHash;
         string ipfsCid;
         uint256 timestamp;
     }
 
+    // Mapping to store certificate information by hash
+    // This mapping allows us to quickly access certificate information by its hash
     mapping(bytes32 => CertificateInfo) private certificateList;
 
     // Event emitted when a certificate is stored
     event CertificateStored(string comment);
 
+    // ========================== Certificate Management Functions ========================= //
+
+    // Function to add a new certificate
+    // This function allows the owner (e.g., SCV_UI_manager) to add a new certificate
+    // It takes a CID (Content Identifier) and a certificate hash as parameters
+    // It returns the index of the newly added certificate
+    // Note: This function is only callable by the owner (e.g., SCV_UI_manager)
+    // It checks for valid inputs and ensures the certificate does not already exist
     function addCertificate(string memory _cid, bytes32 _certHash) public onlyOwner returns (uint256) {
         require(bytes(_cid).length > 0, "Invalid CID");
         require(_certHash != bytes32(0), "Invalid certificate hash");
@@ -77,6 +109,11 @@ contract SCV_storage_manager is ISCVStorageManager {
         return num_certificates - 1; // Return the index of the newly added certificate
     }
 
+    // Function to get certificate information by hash
+    // This function returns a tuple with a boolean indicating success and a string with the certificate info
+    // Note: This function is only callable by the owner (e.g., SCV_UI_manager)
+    // It returns a boolean indicating success and a string with the certificate information
+    // The string contains the timestamp, hash, and CID of the certificate
     function getCertificateInfoByHash(bytes32 _certHash) public view onlyOwner returns (bool, string memory) {
         require(_certHash != bytes32(0), "Invalid certificate hash");
 
@@ -113,6 +150,8 @@ contract SCV_storage_manager is ISCVStorageManager {
 
     // Function to get all certificates as a string, Debugging purposes or for admin use
     // This function returns a string with all certificates' information
+    // It iterates through the stored certificates and concatenates their information into a single string
+    // Note: This function is only callable by the owner (e.g., SCV_UI_manager)
     function getAllCertificates() public view onlyOwner returns (string memory) {
         if (num_certificates == 0) {
             return "No certificates found";
@@ -147,37 +186,39 @@ contract SCV_storage_manager is ISCVStorageManager {
         return allCerts;
     }
 
+    // Function to get the count of certificates
+    // This function returns the total number of certificates stored in the contract
     function getCertificateCount() public view onlyOwner returns (uint256) {
         return num_certificates;
     }
 
 
-    // LAST TO FUNCTIONS ARE FROM SPECIFIC TYPE TO STRINGS CONVERTER
+    // ========================== Helper Functions ========================= //
 
     // Helper: Convert uint to string
     function uint2str(uint256 _i) internal pure returns (string memory) {
-    if (_i == 0) {
-        return "0";
+        if (_i == 0) {
+            return "0";
+        }
+
+        uint256 temp = _i;
+        uint256 length = 0;
+        while (temp != 0) {
+            length++;
+            temp /= 10;
+        }
+
+        bytes memory bstr = new bytes(length);
+        uint256 k = length;
+
+        while (_i != 0) {
+            k--;
+            bstr[k] = bytes1(uint8(48 + _i % 10));
+            _i /= 10;
+        }
+
+        return string(bstr);
     }
-
-    uint256 temp = _i;
-    uint256 length = 0;
-    while (temp != 0) {
-        length++;
-        temp /= 10;
-    }
-
-    bytes memory bstr = new bytes(length);
-    uint256 k = length;
-
-    while (_i != 0) {
-        k--;
-        bstr[k] = bytes1(uint8(48 + _i % 10));
-        _i /= 10;
-    }
-
-    return string(bstr);
-}
 
 
     // Helper: Convert bytes32 to hex string

@@ -233,7 +233,7 @@ const path = require("path");
                 await expect(
                     uiManager.connect(user1).storeCertificate(user1.address, certificateHash, ipfsCid)
                 ).to.emit(uiManager, "CertificateStored")
-                .withArgs(user1.address);
+                .withArgs(user1.address, certificateHash, ipfsCid);
                 // Verify certificate exists in storage manager
                 const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
                 expect(exists).to.be.true;
@@ -380,12 +380,13 @@ const path = require("path");
                 const tx = await uiManager.connect(user1).getCertificateInfo(certificateHash);
                 const receipt = await tx.wait(); // Wait for the transaction to be mined
 
-                expect(receipt).to.emit(uiManager, "CertificateQueriedCorrectly");
+                expect(receipt).to.emit(uiManager, "CertificateQueriedCorrectly")
+                .withArgs(user1.address, certificateHash, ipfsCid);
 
                 // Check if the transaction was successful
                 expect(receipt.status).to.equal(1); // 1 means success, 0 means failure
 
-                const [exists, info] = await uiManager.connect(user1).getCertificateInfoView(certificateHash);
+                const [exists, info] = await uiManager.connect(owner).getCertificateInfoView(certificateHash);
 
                 // print the info for debugging
                 // console.log("Certificate Info:", info);
@@ -825,7 +826,7 @@ const path = require("path");
                 const certificateHash = ethers.keccak256(ethers.toUtf8Bytes("some_certificate_hash"));
 
                 await expect(uiManager.connect(user1).getCertificateInfoView(certificateHash))
-                    .to.be.revertedWith("Not authorized for this certificate");
+                    .to.be.revertedWith("Only owner: not authorized");
             });
 
         });

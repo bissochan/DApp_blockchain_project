@@ -120,7 +120,44 @@ You can run each step manually or use the automated one-liner.
 
     > Output: address_data/deployedContract.json
 
----
+## Testing the Smart Contracts
+Before testing the smart contracts, modify the `hardhat.config.cjs` file, to ensure auto mining of the contracts is enabled. This is necessary for the tests to run correctly.
+This file is located in the `blockchain_folder` directory.
+This is motivated by the need to ensure that transactions are mined automatically during testing, since the test calls are asynchronous and require the blockchain to be ready for the next transaction, while in actual propototype network the deployment wait for the transaction to be mined before proceeding.
+Here is the configuration you need to add or modify in `hardhat.config.cjs`:
+```javascript
+module.exports = {
+  solidity: "0.8.18",
+  networks: {
+    hardhat: {
+      mining: {
+        auto: true, // Enable auto mining
+        interval: 1000 // Set mining interval to 1 second
+      }
+    }
+  }
+};
+```
+
+To test the smart contracts, enter the `blockchain_folder` directory and run:
+
+```bash
+npx hardhat test
+```
+
+This will execute all tests in the `test_smart_contracts` directory using Mocha and Chai.
+
+If you want to run a specific test file, use:
+
+```bash
+npx hardhat test test_smart_contracts/<test_file_name>.js
+```
+
+If you want to see the test coverage, you can use:
+
+```bash
+npx hardhat coverage
+```
 
 ## Backend Setup
 
