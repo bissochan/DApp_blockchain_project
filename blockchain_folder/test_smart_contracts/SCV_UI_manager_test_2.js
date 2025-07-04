@@ -1,5 +1,3 @@
-// STILL IT WORK FOR NOW
-
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
