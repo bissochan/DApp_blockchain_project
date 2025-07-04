@@ -14,8 +14,8 @@ function checkNodeReady() {
         host: HOST,
         port: PORT,
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       },
       (res) => {
         resolve(res.statusCode === 200);
@@ -28,7 +28,7 @@ function checkNodeReady() {
         jsonrpc: "2.0",
         method: "web3_clientVersion",
         params: [],
-        id: 1
+        id: 1,
       })
     );
     req.end();

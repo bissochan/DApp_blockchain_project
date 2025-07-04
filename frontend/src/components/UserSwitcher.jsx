@@ -38,10 +38,9 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
     loadUsers();
   }, [filter]);
 
-
   const handleChange = (e) => {
     const selectedId = e.target.value;
-    const newUser = filteredUsers.find(u => u.id === selectedId);
+    const newUser = filteredUsers.find((u) => u.id === selectedId);
     if (newUser) onChangeUser(newUser);
   };
 
@@ -50,7 +49,8 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100 border rounded mb-4">
       <div className="text-sm">
-        <span className="font-semibold">Utente corrente:</span> {currentUser?.username} ({currentUser?.role})
+        <span className="font-semibold">Utente corrente:</span>{" "}
+        {currentUser?.username} ({currentUser?.role})
       </div>
       <div>
         <select

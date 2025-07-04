@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import { getMyRequestExperiences, postExperienceCertification } from "../services/api";
+import {
+  getMyRequestExperiences,
+  postExperienceCertification,
+} from "../services/api";
 
 function CertificationForm({ currentUser }) {
   const [requests, setRequests] = useState([]);
@@ -15,11 +18,17 @@ function CertificationForm({ currentUser }) {
       } catch (err) {
         const message = err.response?.data?.error;
         if (message === "Company approval is still pending") {
-          setError("La tua richiesta di registrazione come azienda è ancora in attesa.");
+          setError(
+            "La tua richiesta di registrazione come azienda è ancora in attesa."
+          );
         } else if (message === "Company registration was rejected") {
-          setError("La tua richiesta di registrazione come azienda è stata rifiutata.");
+          setError(
+            "La tua richiesta di registrazione come azienda è stata rifiutata."
+          );
         } else if (message === "Company has been removed from the whitelist") {
-          setError("La tua azienda è stata rimossa dalla whitelist. Contatta un amministratore.");
+          setError(
+            "La tua azienda è stata rimossa dalla whitelist. Contatta un amministratore."
+          );
         } else {
           setError("Errore durante il caricamento delle richieste.");
         }
@@ -38,7 +47,7 @@ function CertificationForm({ currentUser }) {
       const response = await postExperienceCertification({
         claimId: id,
         companyUsername: currentUser.username,
-        isApproved
+        isApproved,
       });
       setRequests(requests.filter((req) => req.claimId !== id));
 
@@ -52,13 +61,14 @@ function CertificationForm({ currentUser }) {
     }
   };
 
-
   if (loading) return <p>Caricamento...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Richieste di Certificazione</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Richieste di Certificazione
+      </h2>
 
       {successMessage && <p className="text-green-600">{successMessage}</p>}
 
@@ -67,7 +77,10 @@ function CertificationForm({ currentUser }) {
       ) : (
         <div className="space-y-4">
           {requests.map((req) => (
-            <div key={req.claimId} className="border-b pb-2 flex justify-between items-center">
+            <div
+              key={req.claimId}
+              className="border-b pb-2 flex justify-between items-center"
+            >
               <div>
                 <h3 className="font-semibold">
                   CV certification required by userId: {req.claim.userId}

@@ -53,7 +53,6 @@ router.post("/register/candidate", (req, res) => {
     privateKey: assignedWallet.privateKey,
   });
 
-
   console.log("Candidate registered:", username);
   res.status(201).json({
     message: "Candidate registered",
@@ -86,8 +85,13 @@ router.post("/register/company", async (req, res) => {
   // Check if already whitelisted (avoid double registration)
   const isWhitelisted = await UIManager.isWhitelisted(assignedWallet.address);
   if (isWhitelisted) {
-    console.log("Company already whitelisted on-chain. Registration failed:", username);
-    return res.status(400).json({ error: "Company already whitelisted on-chain" });
+    console.log(
+      "Company already whitelisted on-chain. Registration failed:",
+      username
+    );
+    return res
+      .status(400)
+      .json({ error: "Company already whitelisted on-chain" });
   }
 
   // Save company info off-chain
@@ -141,7 +145,9 @@ router.get("/pending_whitelist_requests", (req, res) => {
  */
 router.post("/approve_whitelist", async (req, res) => {
   const { requestId } = req.body;
-  const request = pendingWhitelistRequests.find((r) => r.requestId === requestId);
+  const request = pendingWhitelistRequests.find(
+    (r) => r.requestId === requestId
+  );
   if (!request) return res.status(404).json({ error: "Request not found" });
 
   const company = companies.find((c) => c.id === request.companyId);
@@ -151,18 +157,24 @@ router.post("/approve_whitelist", async (req, res) => {
   try {
     await enqueueTxForWallet(masterWallet, (nonce) => {
       const uiManagerConnected = UIManager.connect(masterWallet);
-      return uiManagerConnected.addWhiteListEntity(company.walletAddress, { nonce });
+      return uiManagerConnected.addWhiteListEntity(company.walletAddress, {
+        nonce,
+      });
     });
 
     company.approvalStatus = "approved";
-    const index = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
+    const index = pendingWhitelistRequests.findIndex(
+      (r) => r.requestId === requestId
+    );
     pendingWhitelistRequests.splice(index, 1);
 
     console.log("Approved and whitelisted company:", company.username);
     res.status(200).json({ message: "Company approved and whitelisted." });
   } catch (err) {
     console.error("Error during whitelisting:", err);
-    res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Blockchain transaction failed", details: err.message });
   }
 });
 
@@ -173,9 +185,12 @@ router.post("/approve_whitelist", async (req, res) => {
  */
 router.post("/reject_whitelist", (req, res) => {
   const { requestId } = req.body;
-  const requestIndex = pendingWhitelistRequests.findIndex((r) => r.requestId === requestId);
+  const requestIndex = pendingWhitelistRequests.findIndex(
+    (r) => r.requestId === requestId
+  );
 
-  if (requestIndex === -1) return res.status(404).json({ error: "Request not found" });
+  if (requestIndex === -1)
+    return res.status(404).json({ error: "Request not found" });
 
   const request = pendingWhitelistRequests[requestIndex];
   const company = companies.find((c) => c.id === request.companyId);
@@ -208,19 +223,23 @@ router.post("/remove_certifier", async (req, res) => {
   try {
     await enqueueTxForWallet(masterWallet, (nonce) => {
       const uiManagerConnected = UIManager.connect(masterWallet);
-      return uiManagerConnected.removeWhiteListEntity(company.walletAddress, { nonce });
+      return uiManagerConnected.removeWhiteListEntity(company.walletAddress, {
+        nonce,
+      });
     });
 
     company.approvalStatus = "removed";
 
     console.log(`Removed certifier ${username} from whitelist`);
-    res.status(200).json({ message: "Certifier removed from whitelist", username });
-
+    res
+      .status(200)
+      .json({ message: "Certifier removed from whitelist", username });
   } catch (err) {
     console.error("Error removing certifier from whitelist:", err);
-    res.status(500).json({ error: "Blockchain transaction failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Blockchain transaction failed", details: err.message });
   }
 });
-
 
 export default router;

@@ -14,9 +14,9 @@ router.post("/fund_user", async (req, res) => {
   const { username } = req.body;
 
   const user =
-    users.find(u => u.username === username) ||
-    companies.find(c => c.username === username) ||
-    admins.find(a => a.username === username);
+    users.find((u) => u.username === username) ||
+    companies.find((c) => c.username === username) ||
+    admins.find((a) => a.username === username);
   if (!user) return res.status(404).json({ error: "User not found" });
 
   const tokenAmountToBuy = 100;
@@ -32,7 +32,9 @@ router.post("/fund_user", async (req, res) => {
 
     await enqueueTxForWallet(masterWallet, (nonce) => {
       const uiConnected = UIManager.connect(masterWallet);
-      return uiConnected.transferTokens(user.walletAddress, tokenAmountToBuy, { nonce });
+      return uiConnected.transferTokens(user.walletAddress, tokenAmountToBuy, {
+        nonce,
+      });
     });
 
     res.json({
@@ -42,30 +44,33 @@ router.post("/fund_user", async (req, res) => {
       tokenAmount: tokenAmountToBuy,
       paidInEther: etherToSend,
     });
-
   } catch (err) {
     console.error("Token purchase failed:", err);
-    res.status(500).json({ error: "Token purchase failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Token purchase failed", details: err.message });
   }
 });
-
 
 router.post("/get_balance", async (req, res) => {
   console.log("Received get_balance request:", req.body);
   const { username } = req.body;
 
-  const user = users.find(u => u.username === username) ||
-    companies.find(c => c.username === username) ||
-    admins.find(a => a.username === username);
+  const user =
+    users.find((u) => u.username === username) ||
+    companies.find((c) => c.username === username) ||
+    admins.find((a) => a.username === username);
 
   if (!user) return res.status(404).json({ error: "User not found" });
 
   try {
-    const tokenBalance = await UIManager.getUserTokenBalance(user.walletAddress);
+    const tokenBalance = await UIManager.getUserTokenBalance(
+      user.walletAddress
+    );
     res.json({ balance: tokenBalance.toString() });
   } catch (err) {
-    console.error("Errore nel recupero balance via UIManager:", err);
-    res.status(500).json({ error: "Errore nel recupero balance" });
+    console.error("Error in the balance's recovery via UIManager:", err);
+    res.status(500).json({ error: "Error in balance's recovery" });
   }
 });
 

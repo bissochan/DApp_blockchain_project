@@ -14,7 +14,10 @@ if (!fs.existsSync(IPFS_DIR)) {
  */
 export function fakeIpfsAdd(data) {
   const stringified = JSON.stringify(data);
-  const cid = createHash("sha256").update(stringified).digest("hex").slice(0, 46);
+  const cid = createHash("sha256")
+    .update(stringified)
+    .digest("hex")
+    .slice(0, 46);
   const filePath = path.join(IPFS_DIR, `${cid}.json`);
   fs.writeFileSync(filePath, stringified, "utf-8");
   return cid;

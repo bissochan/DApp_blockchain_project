@@ -1,0 +1,102 @@
+[
+  {
+    "address": "0x975DCbDA8C198372cE84b457d183B45E33758760",
+    "privateKey": "0x1133a46a7e6347e6e1449f56cf8d421ae92cd2725cc90ded0aaa0f76ee2b7baf",
+    "balance": "50000000000000000000000"
+  },
+  {
+    "address": "0xD3f3aC3d9a07188497Db09d8B13f8e6171638D68",
+    "privateKey": "0x5a4c20a94d67d9599d136009c32fc76e5ba30ad2cb9a53cc611c3c21a20e5e0f",
+    "balance": "9988000000000000000"
+  },
+  {
+    "address": "0xC5ac95E4A80d878EC3948545b135593367A4D358",
+    "privateKey": "0xd6482d5325f0de1ce57fb3c858c354cc02c08cb682e3acd53fd6438369d4a61d",
+    "balance": "10933700000000000000"
+  },
+  {
+    "address": "0xcC93F456bF0548b9703336ee84B0b8Be3D8487F9",
+    "privateKey": "0x4b481c145044b287805e29f529de054f2a0c5b00efdba77d9661ba84956c76c2",
+    "balance": "3553200000000000000"
+  },
+  {
+    "address": "0xf5edf5F36AcD3172Ec2cf9B5cE0c3efAF9aC4C10",
+    "privateKey": "0x577d7f831d46f29cab4dfca518694cdc0385888e8134900d87b4bd921ac5addc",
+    "balance": "14225100000000000000"
+  },
+  {
+    "address": "0xD23661B515b99C33dD5e721Ed7d50Efa0c3cc7c9",
+    "privateKey": "0x74f6c90fdcc22caa58a3ef7375ed241df4ec7a7eaa0a10382c2104cde676966f",
+    "balance": "16392300000000000000"
+  },
+  {
+    "address": "0x3faC1D220228226427D018ed39777Ce3A4941806",
+    "privateKey": "0x25bebfeb19ed52f432b1f424c5b2d2d0c31b67d2bce1002a1016c3839541ce82",
+    "balance": "15772700000000000000"
+  },
+  {
+    "address": "0x533fe90856bDD3b92ff13Dd222374439c3a35aCD",
+    "privateKey": "0x1bfc84d0c6995f305f13e64b3723f9313ad9d4501432dc8b584c705db2199503",
+    "balance": "2277200000000000000"
+  },
+  {
+    "address": "0x7875Ed9B42d7cA9C2B0f8b226D4E5b49fF88A5F3",
+    "privateKey": "0xfa02efc5f00d2f5ca96e5768d8e19e2e2717c19123fd1150a81ac8c8a865c31c",
+    "balance": "14199700000000000000"
+  },
+  {
+    "address": "0xe94165469E37974Ebc12A15bedCd99a4a2743506",
+    "privateKey": "0x5140e941117ad747ead97ab7f06c96f6f868088f3c67fb7eeb295eb0ed068aeb",
+    "balance": "18876900000000000000"
+  },
+  {
+    "address": "0xf336A72Cd3BcA18CCcC083f90496B7A30a96E3D5",
+    "privateKey": "0xf486cf2c62d3dd015ac7d0c1f185a4d9dbe6294249bb78b3ee5e131d825fccd8",
+    "balance": "13001400000000000000"
+  },
+  {
+    "address": "0x4f92E9963DAEa54F1cB41921E5982b40b9DC6338",
+    "privateKey": "0x038db068c71885224da70d7fd7f8a53803504144627bb0e87f8236ddd08afba7",
+    "balance": "1820100000000000000"
+  },
+  {
+    "address": "0x832b4697e7b821d3224606AB8bBF70d81E687f10",
+    "privateKey": "0x2a252362b0ae836cb001b186b789a49d987ac60cb51bb7299a4dfdda3748670a",
+    "balance": "6273500000000000000"
+  },
+  {
+    "address": "0xedda3B583628ECf03fAA841021E54fD73880136D",
+    "privateKey": "0xd790cd70a33fb73c506682c356d4279a366ad8915eafccab83e8ccc67e0721ea",
+    "balance": "7045800000000000000"
+  },
+  {
+    "address": "0xCfA81Db90b6ba6891f485dae655f0f5F10B5ecC3",
+    "privateKey": "0x499e821d7812afb349b039bc86f351305564a9586b09b390e1c79186338054e9",
+    "balance": "9174100000000000000"
+  },
+  {
+    "address": "0xf7D7cc9389B7E4302cA76a88b296562230942153",
+    "privateKey": "0x78e8f833d2ba433227a7b5f0ba47b19cfa6356094b148dd47bbd8ec454fcc84c",
+    "balance": "14822200000000000000"
+  },
+  {
+    "address": "0x5eEDE4cbd7aE352C2f41bb46d9aDa96ba9a0651c",
+    "privateKey": "0x5bff06aab233f04c2efeef3ccb075aa4dba802e8a99c8c1ef5f6a2418e69b2f7",
+    "balance": "8971700000000000000"
+  },
+  {
+    "address": "0x55cd168f41bCf2af271EA0f07E410ECfd9416e78",
+    "privateKey": "0xa4288eda20b1e274be8d55d7ec3030f9473da9eccac8ea1639a7b37d229a9ee5",
+    "balance": "14472400000000000000"
+  },
+  {
+    "address": "0x60c574C1a73751e1630dAE660c9Ebf0F46316e2E",
+    "privateKey": "0x182d4ffc2b9d610e84bd891943081cf3a8897d5cf137b3895424cda6d0edf0a6",
+    "balance": "6683200000000000000"
+  },
+  {
+    "address": "0xA6fd57C3e96b2849D3b1588d6A89B269DFB59904",
+    "privateKey": "0xba4979e50c923c697ff9a6db19b5c7106c2e4bf8346bf9efb4877a5bcc7215ea",
+    "balance": "8561000000000000000"
+  }
+]

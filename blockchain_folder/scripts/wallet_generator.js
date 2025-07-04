@@ -13,15 +13,16 @@ const wallets = [];
 for (let i = 0; i < N; i++) {
   const wallet = Wallet.createRandom();
 
-  // Balance logica:
-  const balance = i === 0
-    ? parseEther("50000").toString()  // 50.000 ETH to wallet[0]
-    : parseEther((Math.random() * 20 + 1).toFixed(4)).toString(); // 1–21 ETH randomly to others
+  // Balance logic:
+  const balance =
+    i === 0
+      ? parseEther("50000").toString() // 50.000 ETH to wallet[0] (master  wallet)
+      : parseEther((Math.random() * 20 + 1).toFixed(4)).toString(); // 1–21 ETH randomly to others
 
   wallets.push({
     address: wallet.address,
     privateKey: wallet.privateKey,
-    balance
+    balance,
   });
 }
 

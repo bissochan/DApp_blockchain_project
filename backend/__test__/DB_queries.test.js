@@ -4,12 +4,10 @@ let request, app;
 let users, companies, certificates;
 
 beforeAll(async () => {
-  // Mock blockchain interactions
   await jest.unstable_mockModule("../src/contracts/setup.js", () => ({
-    ensureDefaultCompanyWhitelisted: jest.fn(), // mocka la funzione chiamata da index.js
+    ensureDefaultCompanyWhitelisted: jest.fn(),
   }));
 
-  // Dynamic import of database after mock
   request = (await import("supertest")).default;
   app = (await import("../index.js")).default;
 
@@ -30,8 +28,18 @@ describe("DB Queries API", () => {
     users.push({ id: "user_1", username: "alice" });
     companies.push({ id: "company_1", username: "tech_corp" });
     certificates.push(
-      { userId: "user_1", certificateHash: "hash_1", cid: "cid_1", companyId: "company_1" },
-      { userId: "user_1", certificateHash: "hash_2", cid: "cid_2", companyId: "company_1" }
+      {
+        userId: "user_1",
+        certificateHash: "hash_1",
+        cid: "cid_1",
+        companyId: "company_1",
+      },
+      {
+        userId: "user_1",
+        certificateHash: "hash_2",
+        cid: "cid_2",
+        companyId: "company_1",
+      }
     );
   });
 

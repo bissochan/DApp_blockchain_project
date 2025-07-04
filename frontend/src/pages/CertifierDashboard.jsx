@@ -12,7 +12,7 @@ function CertifierDashboard() {
       try {
         const res = await fetchCompanies();
         if (res.data.length > 0) {
-          setCurrentUser(res.data[0]); // First company as default
+          setCurrentUser(res.data[0]);
         }
       } catch (err) {
         console.error("Failed to load companies", err);
@@ -22,13 +22,13 @@ function CertifierDashboard() {
     loadInitialCompany();
   }, []);
 
-  if (!currentUser) return <div className="p-8">Caricamento company...</div>;
+  if (!currentUser) return <div className="p-8">Loading company...</div>;
 
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard Certificatore</h1>
+        <h1 className="text-3xl font-bold mb-6">Certifier's Dashboard</h1>
 
         <UserSwitcher
           currentUser={currentUser}

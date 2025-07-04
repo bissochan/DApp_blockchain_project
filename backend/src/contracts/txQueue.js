@@ -18,7 +18,10 @@ export function enqueueTxForWallet(wallet, fnFactory) {
 
     // Initialize nonceCache for this wallet if not yet done
     if (!nonceCache.has(address)) {
-      const onChainNonce = await provider.getTransactionCount(address, "latest");
+      const onChainNonce = await provider.getTransactionCount(
+        address,
+        "latest"
+      );
       nonceCache.set(address, onChainNonce);
     }
 
@@ -34,7 +37,7 @@ export function enqueueTxForWallet(wallet, fnFactory) {
 
       // Mine a block if using a local chain (optional, adjust if using real chain)
       await provider.send("evm_mine", []);
-      
+
       const receipt = await tx.wait();
 
       if (!receipt || receipt.status !== 1) {
@@ -51,7 +54,10 @@ export function enqueueTxForWallet(wallet, fnFactory) {
   });
 
   // Update the queue to include this tx
-  queues.set(address, txPromise.catch(() => {}));
+  queues.set(
+    address,
+    txPromise.catch(() => {})
+  );
 
   return txPromise;
 }

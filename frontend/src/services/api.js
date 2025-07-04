@@ -16,18 +16,24 @@ export const fetchUsersAndCompanies = () => API.get("/utils/all");
 // Worker endpoints
 export const postWorker = (data) => API.post("/auth/register/candidate", data);
 export const postExperience = (data) => {
-  console.log("Dati inviati a /claim/create_claim:", data); // Log per debug
+  console.log("Dati inviati a /claim/create_claim:", data);
   return API.post("/claim/create_claim", {
     ...data,
-    company: data.company, // Assicurati che il campo sia 'company'
+    company: data.company,
   });
 };
-export const getUserCertificates = (userId) => API.get(`/utils/user_certificates/${userId}`);
+export const getUserCertificates = (userId) =>
+  API.get(`/utils/user_certificates/${userId}`);
 
 // Certifier endpoints
 export const postCompany = (data) => API.post("/auth/register/company", data);
-export const getMyRequestExperiences = (companyId) => API.get(`/claim/pending/${companyId}`);
-export const postExperienceCertification = ({ claimId, companyUsername, isApproved }) => {
+export const getMyRequestExperiences = (companyId) =>
+  API.get(`/claim/pending/${companyId}`);
+export const postExperienceCertification = ({
+  claimId,
+  companyUsername,
+  isApproved,
+}) => {
   const endpoint = isApproved ? "/claim/approve_claim" : "/claim/reject_claim";
   return API.post(endpoint, { claimId, companyUsername });
 };
@@ -35,14 +41,21 @@ export const postExperienceCertification = ({ claimId, companyUsername, isApprov
 // Verifier endpoint
 export const checkHash = ({ verifierUsername, certificateHash }) =>
   API.post("/verify/verify_certificate", { verifierUsername, certificateHash });
-export const fundUser = ({ username, amount }) => API.post("/token/fund_user", { username, amount });
-export const getUserTokenBalance = (data) => API.post("/token/get_balance", data);
+export const fundUser = ({ username, amount }) =>
+  API.post("/token/fund_user", { username, amount });
+export const getUserTokenBalance = (data) =>
+  API.post("/token/get_balance", data);
 
 // Admin endpoints
-export const requestWhitelist = (data) => API.post("/auth/request_whitelist", data);
-export const getPendingWhitelistRequests = () => API.get("/auth/pending_whitelist_requests");
-export const approveWhitelistRequest = (data) => API.post("/auth/approve_whitelist", data);
-export const rejectWhitelistRequest = (data) => API.post("/auth/reject_whitelist", data);
-export const removeCertifier = (data) => API.post("/auth/remove_certifier", data);
+export const requestWhitelist = (data) =>
+  API.post("/auth/request_whitelist", data);
+export const getPendingWhitelistRequests = () =>
+  API.get("/auth/pending_whitelist_requests");
+export const approveWhitelistRequest = (data) =>
+  API.post("/auth/approve_whitelist", data);
+export const rejectWhitelistRequest = (data) =>
+  API.post("/auth/reject_whitelist", data);
+export const removeCertifier = (data) =>
+  API.post("/auth/remove_certifier", data);
 
 export default API;

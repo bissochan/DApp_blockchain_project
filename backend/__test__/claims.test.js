@@ -4,7 +4,6 @@ let request, app;
 let users, companies, pendingClaims, certificates;
 
 beforeAll(async () => {
-  // === Mock blockchain ===
   await jest.unstable_mockModule("../src/contracts/contract.js", () => ({
     UIManager: {
       isWhitelisted: jest.fn().mockResolvedValue(false),
@@ -43,16 +42,14 @@ beforeAll(async () => {
     provider: {},
     masterWallet: {
       address: "0xmasterwallet",
-      privateKey: "0xprivatemock"
-    }
+      privateKey: "0xprivatemock",
+    },
   }));
-
 
   await jest.unstable_mockModule("../src/contracts/txQueue.js", () => ({
     enqueueTxForWallet: async (_, fn) => await fn(0),
   }));
 
-  // === Dynamic import AFTER mocks ===
   request = (await import("supertest")).default;
   app = (await import("../index.js")).default;
 
@@ -74,14 +71,16 @@ describe("Claim Management API", () => {
   const candidate = {
     id: "user_1",
     username: "alice",
-    privateKey: "0x59c6995e998f97a5a004497e5d4e0d5dca0e46d67d05fbf5bc217d05c091b4b0" // hardhat key
+    privateKey:
+      "0x59c6995e998f97a5a004497e5d4e0d5dca0e46d67d05fbf5bc217d05c091b4b0",
   };
 
   const company = {
     id: "company_1",
     username: "block_corp",
-    privateKey: "0x8b3a350cf5c34c9194ca7ed72bb6a2e0e9d9c9df50bf44c86f1a93b1a5c7f8ff", // hardhat key
-    approvalStatus: "approved"
+    privateKey:
+      "0x8b3a350cf5c34c9194ca7ed72bb6a2e0e9d9c9df50bf44c86f1a93b1a5c7f8ff",
+    approvalStatus: "approved",
   };
 
   const claimPayload = {
@@ -90,7 +89,7 @@ describe("Claim Management API", () => {
     role: "Frontend Dev",
     startDate: "2023-01-01",
     endDate: "2023-12-31",
-    description: "Worked on dApp UI"
+    description: "Worked on dApp UI",
   };
 
   beforeEach(() => {
@@ -157,14 +156,16 @@ describe("Claim Management API - Negative Tests", () => {
   const candidate = {
     id: "user_1",
     username: "alice",
-    privateKey: "0x59c6995e998f97a5a004497e5d4e0d5dca0e46d67d05fbf5bc217d05c091b4b0"
+    privateKey:
+      "0x59c6995e998f97a5a004497e5d4e0d5dca0e46d67d05fbf5bc217d05c091b4b0",
   };
 
   const company = {
     id: "company_1",
     username: "block_corp",
-    privateKey: "0x8b3a350cf5c34c9194ca7ed72bb6a2e0e9d9c9df50bf44c86f1a93b1a5c7f8ff",
-    approvalStatus: "approved"
+    privateKey:
+      "0x8b3a350cf5c34c9194ca7ed72bb6a2e0e9d9c9df50bf44c86f1a93b1a5c7f8ff",
+    approvalStatus: "approved",
   };
 
   beforeEach(() => {
@@ -179,7 +180,7 @@ describe("Claim Management API - Negative Tests", () => {
       role: "Dev",
       startDate: "2023-01-01",
       endDate: "2023-12-31",
-      description: "Work"
+      description: "Work",
     });
 
     expect(res.status).toBe(404);
@@ -193,7 +194,7 @@ describe("Claim Management API - Negative Tests", () => {
       role: "Dev",
       startDate: "2023-01-01",
       endDate: "2023-12-31",
-      description: "Work"
+      description: "Work",
     });
 
     expect(res.status).toBe(404);
@@ -216,7 +217,7 @@ describe("Claim Management API - Negative Tests", () => {
   test("should return 404 when approving a claim that doesn't exist", async () => {
     const res = await request(app).post("/api/claim/approve_claim").send({
       companyUsername: company.username,
-      claimId: "claim_999"
+      claimId: "claim_999",
     });
 
     expect(res.status).toBe(404);
@@ -228,7 +229,7 @@ describe("Claim Management API - Negative Tests", () => {
       id: "company_2",
       username: "evilcorp",
       privateKey: company.privateKey,
-      approvalStatus: "approved"
+      approvalStatus: "approved",
     };
     companies.push(otherCompany);
 
@@ -238,12 +239,12 @@ describe("Claim Management API - Negative Tests", () => {
       role: "Dev",
       startDate: "2023-01-01",
       endDate: "2023-12-31",
-      description: "Work"
+      description: "Work",
     });
 
     const res = await request(app).post("/api/claim/approve_claim").send({
       companyUsername: otherCompany.username,
-      claimId: createRes.body.claimId
+      claimId: createRes.body.claimId,
     });
 
     expect(res.status).toBe(403);
@@ -257,12 +258,12 @@ describe("Claim Management API - Negative Tests", () => {
       role: "Dev",
       startDate: "2023-01-01",
       endDate: "2023-12-31",
-      description: "Work"
+      description: "Work",
     });
 
     const res = await request(app).post("/api/claim/reject_claim").send({
       companyUsername: "non_authorized_company",
-      claimId: createRes.body.claimId
+      claimId: createRes.body.claimId,
     });
 
     expect(res.status).toBe(403);
@@ -272,7 +273,7 @@ describe("Claim Management API - Negative Tests", () => {
   test("should return 404 when rejecting a non-existent claim", async () => {
     const res = await request(app).post("/api/claim/reject_claim").send({
       companyUsername: company.username,
-      claimId: "claim_999"
+      claimId: "claim_999",
     });
 
     expect(res.status).toBe(404);

@@ -11,8 +11,9 @@ function CertifierList({ currentUser }) {
     const fetchCertifiers = async () => {
       try {
         const response = await fetchCompanies();
-        setCertifiers(response.data.filter((c) => c.approvalStatus === "approved"));
-
+        setCertifiers(
+          response.data.filter((c) => c.approvalStatus === "approved")
+        );
       } catch (err) {
         setError("Errore durante il caricamento dei certificatori.");
       } finally {
@@ -45,7 +46,9 @@ function CertifierList({ currentUser }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Elenco Certificatori</h2>
-      {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
+      {successMessage && (
+        <p className="text-green-600 mb-4">{successMessage}</p>
+      )}
       {certifiers.length === 0 ? (
         <p>Nessun certificatore trovato.</p>
       ) : (

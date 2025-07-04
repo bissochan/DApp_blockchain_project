@@ -10,7 +10,7 @@ export async function ensureDefaultCompanyWhitelisted() {
   for (const company of companies) {
     if (
       company.approvalStatus === "pending" &&
-      !pendingWhitelistRequests.find(r => r.companyId === company.id)
+      !pendingWhitelistRequests.find((r) => r.companyId === company.id)
     ) {
       pendingWhitelistRequests.push({
         requestId: `req_${company.id}`,
@@ -34,7 +34,9 @@ export async function ensureDefaultCompanyWhitelisted() {
     const companyWallet = new Wallet(wallets[walletIndex].privateKey, provider);
     const isWhitelisted = await UIManager.isWhitelisted(companyWallet.address);
     if (isWhitelisted) {
-      console.log(`✓ [INIT] Company already whitelisted: ${company.username} (${companyWallet.address})`);
+      console.log(
+        `✓ [INIT] Company already whitelisted: ${company.username} (${companyWallet.address})`
+      );
       continue;
     }
 
@@ -43,9 +45,13 @@ export async function ensureDefaultCompanyWhitelisted() {
         const uiConnected = UIManager.connect(masterWallet);
         return uiConnected.addWhiteListEntity(companyWallet.address, { nonce });
       });
-      console.log(`✓ [INIT] Company whitelisted: ${company.username} (${companyWallet.address})`);
+      console.log(
+        `✓ [INIT] Company whitelisted: ${company.username} (${companyWallet.address})`
+      );
     } catch (err) {
-      console.error(`✖ [INIT] Failed to whitelist ${company.username}: ${err.message}`);
+      console.error(
+        `✖ [INIT] Failed to whitelist ${company.username}: ${err.message}`
+      );
     }
   }
 }

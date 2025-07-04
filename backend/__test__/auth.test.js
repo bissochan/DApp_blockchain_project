@@ -4,7 +4,6 @@ let request, app;
 let companies, pendingWhitelistRequests, users;
 
 beforeAll(async () => {
-  // Mock blockchain modules before importing the app
   await jest.unstable_mockModule("../src/contracts/contract.js", () => ({
     UIManager: {
       isWhitelisted: jest.fn().mockResolvedValue(false),
@@ -44,7 +43,6 @@ beforeAll(async () => {
     enqueueTxForWallet: async (_, fn) => await fn(0),
   }));
 
-  // Dynamic imports after mocks
   request = (await import("supertest")).default;
   app = (await import("../index.js")).default;
 
@@ -67,7 +65,7 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty("walletAddress");
 
-    const user = users.find(u => u.username === "candidate_test");
+    const user = users.find((u) => u.username === "candidate_test");
     expect(user).toBeDefined();
   });
 
@@ -79,8 +77,10 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(201);
     expect(res.body).toHaveProperty("walletAddress");
 
-    const company = companies.find(c => c.username === companyUsername);
-    const requestEntry = pendingWhitelistRequests.find(r => r.username === companyUsername);
+    const company = companies.find((c) => c.username === companyUsername);
+    const requestEntry = pendingWhitelistRequests.find(
+      (r) => r.username === companyUsername
+    );
 
     expect(company).toBeDefined();
     expect(requestEntry).toBeDefined();
@@ -94,7 +94,7 @@ describe("Auth API", () => {
 
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body.find(r => r.username === companyUsername)).toBeDefined();
+    expect(res.body.find((r) => r.username === companyUsername)).toBeDefined();
   });
 
   it("should approve a pending whitelist request", async () => {
@@ -105,10 +105,12 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Company approved and whitelisted.");
 
-    const company = companies.find(c => c.username === companyUsername);
+    const company = companies.find((c) => c.username === companyUsername);
     expect(company?.approvalStatus).toBe("approved");
 
-    const stillPending = pendingWhitelistRequests.find(r => r.requestId === requestId);
+    const stillPending = pendingWhitelistRequests.find(
+      (r) => r.requestId === requestId
+    );
     expect(stillPending).toBeUndefined();
   });
 
@@ -120,7 +122,7 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Certifier removed from whitelist");
 
-    const company = companies.find(c => c.username === companyUsername);
+    const company = companies.find((c) => c.username === companyUsername);
     expect(company?.approvalStatus).toBe("removed");
   });
 
@@ -131,7 +133,9 @@ describe("Auth API", () => {
       .post("/api/auth/register/company")
       .send({ username: secondUsername });
 
-    const req = pendingWhitelistRequests.find(r => r.username === secondUsername);
+    const req = pendingWhitelistRequests.find(
+      (r) => r.username === secondUsername
+    );
     expect(req).toBeDefined();
 
     const res = await request(app)
@@ -141,14 +145,16 @@ describe("Auth API", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe("Company whitelist request rejected.");
 
-    const company = companies.find(c => c.username === secondUsername);
+    const company = companies.find((c) => c.username === secondUsername);
     expect(company?.approvalStatus).toBe("rejected");
   });
 });
 
 describe("Auth API - Negative tests", () => {
   test("should return 400 when candidate registration is missing username", async () => {
-    const res = await request(app).post("/api/auth/register/candidate").send({});
+    const res = await request(app)
+      .post("/api/auth/register/candidate")
+      .send({});
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("Missing username");
   });
@@ -156,7 +162,9 @@ describe("Auth API - Negative tests", () => {
   test("should return 400 when registering a duplicate candidate", async () => {
     const username = "duplicate_candidate";
     await request(app).post("/api/auth/register/candidate").send({ username });
-    const res = await request(app).post("/api/auth/register/candidate").send({ username });
+    const res = await request(app)
+      .post("/api/auth/register/candidate")
+      .send({ username });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("User already exists");
   });
@@ -170,19 +178,25 @@ describe("Auth API - Negative tests", () => {
   test("should return 400 when registering a duplicate company", async () => {
     const username = "duplicate_company";
     await request(app).post("/api/auth/register/company").send({ username });
-    const res = await request(app).post("/api/auth/register/company").send({ username });
+    const res = await request(app)
+      .post("/api/auth/register/company")
+      .send({ username });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("User already exists");
   });
 
   test("should return 404 when approving a non-existent whitelist request", async () => {
-    const res = await request(app).post("/api/auth/approve_whitelist").send({ requestId: "non_existent_req" });
+    const res = await request(app)
+      .post("/api/auth/approve_whitelist")
+      .send({ requestId: "non_existent_req" });
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Request not found");
   });
 
   test("should return 404 when rejecting a non-existent whitelist request", async () => {
-    const res = await request(app).post("/api/auth/reject_whitelist").send({ requestId: "invalid_req" });
+    const res = await request(app)
+      .post("/api/auth/reject_whitelist")
+      .send({ requestId: "invalid_req" });
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Request not found");
   });
@@ -194,7 +208,9 @@ describe("Auth API - Negative tests", () => {
   });
 
   test("should return 404 when removing a non-existent certifier", async () => {
-    const res = await request(app).post("/api/auth/remove_certifier").send({ username: "ghost_company" });
+    const res = await request(app)
+      .post("/api/auth/remove_certifier")
+      .send({ username: "ghost_company" });
     expect(res.status).toBe(404);
     expect(res.body.error).toBe("Company not found");
   });

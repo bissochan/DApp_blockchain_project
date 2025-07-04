@@ -17,7 +17,7 @@ router.get("/all", (req, res) => {
 
 router.get("/user_certificates/:userId", (req, res) => {
   const { userId } = req.params;
-  const userCerts = certificates.filter(cert => cert.userId === userId);
+  const userCerts = certificates.filter((cert) => cert.userId === userId);
   res.json(userCerts);
 });
 

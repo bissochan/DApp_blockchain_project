@@ -6,19 +6,23 @@ const SECRET_KEY = crypto
   .digest(); // 32 bytes
 
 export function encryptObject(data) {
-  const iv = crypto.randomBytes(16); // nuovo IV per ogni cifratura
+  const iv = crypto.randomBytes(16); // new IV for each encryption
   const cipher = crypto.createCipheriv("aes-256-cbc", SECRET_KEY, iv);
   let encrypted = cipher.update(JSON.stringify(data), "utf8", "hex");
   encrypted += cipher.final("hex");
 
   return {
     iv: iv.toString("hex"),
-    encryptedData: encrypted
+    encryptedData: encrypted,
   };
 }
 
 export function decryptObject({ iv, encryptedData }) {
-  const decipher = crypto.createDecipheriv("aes-256-cbc", SECRET_KEY, Buffer.from(iv, "hex"));
+  const decipher = crypto.createDecipheriv(
+    "aes-256-cbc",
+    SECRET_KEY,
+    Buffer.from(iv, "hex")
+  );
   let decrypted = decipher.update(encryptedData, "hex", "utf8");
   decrypted += decipher.final("utf8");
   return JSON.parse(decrypted);

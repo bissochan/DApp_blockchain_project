@@ -1,7 +1,12 @@
 import { createHash } from "crypto";
 import { ethers } from "ethers";
 import express from "express";
-import { certificates, companies, pendingClaims, users } from "../../database.js";
+import {
+  certificates,
+  companies,
+  pendingClaims,
+  users,
+} from "../../database.js";
 import { UIManager, provider } from "../contracts/contract.js";
 import { enqueueTxForWallet } from "../contracts/txQueue.js";
 import { encryptObject } from "../utils/encrypt.js";
@@ -18,13 +23,12 @@ router.post("/create_claim", async (req, res) => {
   console.log("Received claim creation request:", req.body);
   const { username, company, role, startDate, endDate, description } = req.body;
 
-  const user = users.find(u => u.username === username);
+  const user = users.find((u) => u.username === username);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  const companyObj = companies.find(c => c.username === company);
+  const companyObj = companies.find((c) => c.username === company);
   if (!companyObj) return res.status(404).json({ error: "Company not found" });
 
-  // Construct claim object
   const claim = {
     userId: user.id,
     companyId: companyObj.id,
@@ -32,7 +36,7 @@ router.post("/create_claim", async (req, res) => {
     startDate,
     endDate,
     description,
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 
   // Candidate signs the claim
@@ -40,13 +44,12 @@ router.post("/create_claim", async (req, res) => {
   const userWallet = new ethers.Wallet(user.privateKey, provider);
   const userSignature = await userWallet.signMessage(claimString);
 
-  // Add to pending claims
   const claimId = `claim_${nextClaimId++}`;
   pendingClaims.push({
     claimId,
     claim,
     userSignature,
-    status: "pending"
+    status: "pending",
   });
 
   console.log("New claim created:", { claimId, claim, userSignature });
@@ -60,7 +63,7 @@ router.post("/create_claim", async (req, res) => {
 router.get("/pending/:companyId", (req, res) => {
   const { companyId } = req.params;
 
-  const company = companies.find(c => c.id === companyId);
+  const company = companies.find((c) => c.id === companyId);
   if (!company) {
     return res.status(404).json({ error: "Company not found" });
   }
@@ -74,11 +77,13 @@ router.get("/pending/:companyId", (req, res) => {
   }
 
   if (company.approvalStatus === "removed") {
-    return res.status(403).json({ error: "Company has been removed from the whitelist" });
+    return res
+      .status(403)
+      .json({ error: "Company has been removed from the whitelist" });
   }
 
   const companyClaims = pendingClaims.filter(
-    c => c.claim.companyId === companyId && c.status === "pending"
+    (c) => c.claim.companyId === companyId && c.status === "pending"
   );
 
   console.log("Pending claims for company:", companyId, companyClaims);
@@ -92,14 +97,16 @@ router.get("/pending/:companyId", (req, res) => {
 router.post("/approve_claim", async (req, res) => {
   const { companyUsername, claimId } = req.body;
 
-  const claimEntry = pendingClaims.find(c => c.claimId === claimId);
+  const claimEntry = pendingClaims.find((c) => c.claimId === claimId);
   if (!claimEntry || claimEntry.status !== "pending") {
     console.error("Claim not found or already processed:", claimId);
     console.error("Claim entry:", claimEntry);
-    return res.status(404).json({ error: "Claim not found or already processed" });
+    return res
+      .status(404)
+      .json({ error: "Claim not found or already processed" });
   }
 
-  const company = companies.find(c => c.username === companyUsername);
+  const company = companies.find((c) => c.username === companyUsername);
   if (!company || company.id !== claimEntry.claim.companyId) {
     return res.status(403).json({ error: "Unauthorized approval attempt" });
   }
@@ -109,11 +116,10 @@ router.post("/approve_claim", async (req, res) => {
   const companyWallet = new ethers.Wallet(company.privateKey, provider);
   const certifierSignature = await companyWallet.signMessage(claimString);
 
-  // Prepare encrypted bundle and upload to fake IPFS
   const claimBundle = {
     claim: claimEntry.claim,
     userSignature: claimEntry.userSignature,
-    certifierSignature
+    certifierSignature,
   };
   const encrypted = encryptObject(claimBundle);
   const cid = fakeIpfsAdd(encrypted);
@@ -122,30 +128,33 @@ router.post("/approve_claim", async (req, res) => {
   console.log("CID:", cid);
   console.log("Hash:", certificateHash);
 
-  // Store on-chain using certifier's wallet
   await enqueueTxForWallet(companyWallet, (nonce) => {
     const uiConnected = UIManager.connect(companyWallet.connect(provider));
-    return uiConnected.storeCertificate(companyWallet.address, certificateHash, cid, { nonce });
+    return uiConnected.storeCertificate(
+      companyWallet.address,
+      certificateHash,
+      cid,
+      { nonce }
+    );
   });
 
-  // Update claim state and save reference
   claimEntry.status = "approved";
   certificates.push({
     certificateHash,
     cid,
     userId: claimEntry.claim.userId,
-    companyId: claimEntry.claim.companyId
+    companyId: claimEntry.claim.companyId,
   });
 
   console.log("Claim approved and certificate stored:", {
     claimId,
     certificateHash,
-    cid
+    cid,
   });
   res.json({
     status: "certificate_stored",
     certificateHash,
-    cid
+    cid,
   });
 });
 
@@ -156,12 +165,12 @@ router.post("/approve_claim", async (req, res) => {
 router.post("/reject_claim", (req, res) => {
   const { companyUsername, claimId } = req.body;
 
-  const claimEntry = pendingClaims.find(c => c.claimId === claimId);
+  const claimEntry = pendingClaims.find((c) => c.claimId === claimId);
   if (!claimEntry || !claimEntry.claim) {
     return res.status(404).json({ error: "Claim not found" });
   }
 
-  const company = companies.find(c => c.username === companyUsername);
+  const company = companies.find((c) => c.username === companyUsername);
   if (!company || company.id !== claimEntry.claim.companyId) {
     return res.status(403).json({ error: "Unauthorized rejection attempt" });
   }
@@ -171,7 +180,7 @@ router.post("/reject_claim", (req, res) => {
   console.log("Claim rejected:", { claimId, companyUsername });
   res.json({
     status: "claim_rejected",
-    claimId
+    claimId,
   });
 });
 

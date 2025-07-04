@@ -9,33 +9,36 @@ beforeAll(async () => {
   mockParseLog = jest.fn().mockReturnValue({
     name: "CertificateLookup",
     args: {
-      ipfsCid: "CID:valid123"
-    }
+      ipfsCid: "CID:valid123",
+    },
   });
 
   await jest.unstable_mockModule("../src/contracts/contract.js", () => ({
     UIManager: {
       connect: () => ({
         getCertificateInfo: jest.fn().mockResolvedValue({
-          logs: [{ topics: [], data: "" }]
+          logs: [{ topics: [], data: "" }],
         }),
-        interface: { parseLog: mockParseLog }
+        interface: { parseLog: mockParseLog },
       }),
       interface: { parseLog: mockParseLog },
       target: "0xUIMock",
-      isWhitelisted: jest.fn().mockResolvedValue(true)
+      isWhitelisted: jest.fn().mockResolvedValue(true),
     },
     TokenManager: {
       connect: () => ({
-        approve: jest.fn().mockResolvedValue({ hash: "0xMOCK", wait: jest.fn() })
+        approve: jest
+          .fn()
+          .mockResolvedValue({ hash: "0xMOCK", wait: jest.fn() }),
       }),
-      balanceOf: jest.fn().mockResolvedValue(1000n)
+      balanceOf: jest.fn().mockResolvedValue(1000n),
     },
     masterWallet: {
       address: "0xmasterwallet",
-      privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     },
-    provider: {}
+    provider: {},
   }));
 
   await jest.unstable_mockModule("../src/contracts/txQueue.js", () => ({
@@ -47,12 +50,12 @@ beforeAll(async () => {
       claim: {
         role: "developer",
         userId: "user1",
-        companyId: "comp1"
-      }
+        companyId: "comp1",
+      },
     });
     return {
       decryptObject,
-      encryptObject: jest.fn()
+      encryptObject: jest.fn(),
     };
   });
 
@@ -79,9 +82,19 @@ beforeEach(() => {
 
 describe("POST /api/verify/verify_certificate - Success cases", () => {
   beforeEach(() => {
-    users.push({ id: "user1", username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      id: "user1",
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
     companies.push({ id: "comp1", username: "web3_solutions" });
-    certificates.push({ userId: "user1", companyId: "comp1", certificateHash: "hash_1" });
+    certificates.push({
+      userId: "user1",
+      companyId: "comp1",
+      certificateHash: "hash_1",
+    });
   });
 
   it("should verify certificate and return decrypted data", async () => {
@@ -98,7 +111,10 @@ describe("POST /api/verify/verify_certificate - Success cases", () => {
     expect(res.body.verified).toBe(true);
     expect(res.body.certificate.claim).toHaveProperty("role", "developer");
     expect(res.body.certificate.claim).toHaveProperty("user", "alice");
-    expect(res.body.certificate.claim).toHaveProperty("company", "web3_solutions");
+    expect(res.body.certificate.claim).toHaveProperty(
+      "company",
+      "web3_solutions"
+    );
   });
 });
 
@@ -114,7 +130,12 @@ describe("POST /api/verify/verify_certificate - Failure cases", () => {
   });
 
   it("should return 404 if certificate not found", async () => {
-    users.push({ username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
 
     const res = await request(app)
       .post("/api/verify/verify_certificate")
@@ -129,7 +150,12 @@ describe("POST /api/verify/verify_certificate - Failure cases", () => {
     const contract = await import("../src/contracts/contract.js");
     contract.TokenManager.balanceOf = jest.fn().mockResolvedValue(5n);
 
-    users.push({ username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
     certificates.push({ certificateHash: "hash_1" });
 
     const res = await request(app)
@@ -148,11 +174,16 @@ describe("POST /api/verify/verify_certificate - Failure cases", () => {
     contract.UIManager.connect = () => ({
       getCertificateInfo: jest.fn().mockResolvedValue({ logs: [] }),
       interface: {
-        parseLog: jest.fn().mockReturnValue(null)
-      }
+        parseLog: jest.fn().mockReturnValue(null),
+      },
     });
 
-    users.push({ username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
     certificates.push({ certificateHash: "hash_1" });
 
     const res = await request(app)
@@ -169,20 +200,27 @@ describe("POST /api/verify/verify_certificate - Failure cases", () => {
     const contract = await import("../src/contracts/contract.js");
     contract.TokenManager.balanceOf = jest.fn().mockResolvedValue(1000n);
     contract.UIManager.connect = () => ({
-      getCertificateInfo: jest.fn().mockResolvedValue({ logs: [{ topics: [], data: "" }] }),
+      getCertificateInfo: jest
+        .fn()
+        .mockResolvedValue({ logs: [{ topics: [], data: "" }] }),
       interface: {
         parseLog: jest.fn().mockReturnValue({
           name: "CertificateLookup",
-          args: { ipfsCid: "CID:valid123" }
-        })
-      }
+          args: { ipfsCid: "CID:valid123" },
+        }),
+      },
     });
 
     fakeIpfsCat.mockImplementationOnce(() => {
       throw new Error("CID not found in fake IPFS");
     });
 
-    users.push({ username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
     certificates.push({ certificateHash: "hash_1" });
 
     const res = await request(app)
@@ -199,20 +237,27 @@ describe("POST /api/verify/verify_certificate - Failure cases", () => {
     const contract = await import("../src/contracts/contract.js");
     contract.TokenManager.balanceOf = jest.fn().mockResolvedValue(1000n);
     contract.UIManager.connect = () => ({
-      getCertificateInfo: jest.fn().mockResolvedValue({ logs: [{ topics: [], data: "" }] }),
+      getCertificateInfo: jest
+        .fn()
+        .mockResolvedValue({ logs: [{ topics: [], data: "" }] }),
       interface: {
         parseLog: jest.fn().mockReturnValue({
           name: "CertificateLookup",
-          args: { ipfsCid: "CID:valid123" }
-        })
-      }
+          args: { ipfsCid: "CID:valid123" },
+        }),
+      },
     });
 
     decryptObject.mockImplementationOnce(() => {
       throw new Error("decryption error");
     });
 
-    users.push({ username: "alice", privateKey: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", walletAddress: "0xabc" });
+    users.push({
+      username: "alice",
+      privateKey:
+        "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      walletAddress: "0xabc",
+    });
     certificates.push({ certificateHash: "hash_1" });
 
     const res = await request(app)

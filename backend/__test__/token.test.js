@@ -22,9 +22,9 @@ beforeAll(async () => {
     TokenManager: {},
     masterWallet: {
       address: "0xmasterwallet",
-      privateKey: "0xprivatemock"
+      privateKey: "0xprivatemock",
     },
-    provider: {}
+    provider: {},
   }));
 
   await jest.unstable_mockModule("../src/contracts/txQueue.js", () => ({
@@ -50,7 +50,7 @@ describe("Token API - Positive cases", () => {
   const user = {
     id: "user1",
     username: "alice",
-    walletAddress: "0xabc"
+    walletAddress: "0xabc",
   };
 
   beforeEach(() => {
@@ -103,8 +103,12 @@ describe("Token API - Negative cases", () => {
     users.push({ id: "user1", username: "alice", walletAddress: "0xabc" });
 
     UIManager.connect = () => ({
-      buyTokens: () => { throw new Error("Buy error") },
-      transferTokens: () => { throw new Error("Transfer error") },
+      buyTokens: () => {
+        throw new Error("Buy error");
+      },
+      transferTokens: () => {
+        throw new Error("Transfer error");
+      },
     });
 
     const res = await request(app)

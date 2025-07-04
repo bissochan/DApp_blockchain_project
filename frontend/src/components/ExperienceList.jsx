@@ -27,7 +27,9 @@ function ExperienceList({ currentUser }) {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Le Tue Esperienze Certificate</h2>
+      <h2 className="text-xl font-semibold mb-4">
+        Le Tue Esperienze Certificate
+      </h2>
       {certs.length === 0 ? (
         <p>Nessuna esperienza trovata.</p>
       ) : (

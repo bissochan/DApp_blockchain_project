@@ -20,12 +20,17 @@ function VerificationForm({ currentUser, resetSignal }) {
     try {
       const response = await checkHash({
         verifierUsername: currentUser.username,
-        certificateHash: hash
+        certificateHash: hash,
       });
       setResult(response.data);
     } catch (err) {
-      if (err.response?.data?.error === "Insufficient token balance for verification") {
-        setError("Token insufficienti per effettuare la verifica. Acquista token prima di continuare.");
+      if (
+        err.response?.data?.error ===
+        "Insufficient token balance for verification"
+      ) {
+        setError(
+          "Token insufficienti per effettuare la verifica. Acquista token prima di continuare."
+        );
       } else if (err.response?.data?.error === "Certificate not found") {
         setError("Certificato non trovato.");
       } else if (err.response?.data?.error === "Verifier not found") {
@@ -74,7 +79,9 @@ function VerificationForm({ currentUser, resetSignal }) {
                 Data: {result.certificate.claim.startDate} -{" "}
                 {result.certificate.claim.endDate || "In corso"}
               </p>
-              <p className="text-sm text-gray-600 mt-2">Descrizione: {result.certificate.claim.description}</p>
+              <p className="text-sm text-gray-600 mt-2">
+                Descrizione: {result.certificate.claim.description}
+              </p>
             </>
           )}
         </div>

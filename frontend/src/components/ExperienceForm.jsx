@@ -18,7 +18,9 @@ function ExperienceForm({ currentUser }) {
     async function loadCompanies() {
       try {
         const res = await fetchCompanies();
-        setCompanies((res.data || []).filter((c) => c.approvalStatus === "approved"));
+        setCompanies(
+          (res.data || []).filter((c) => c.approvalStatus === "approved")
+        );
       } catch (err) {
         console.error("Errore nel caricamento aziende", err);
       }
@@ -39,12 +41,18 @@ function ExperienceForm({ currentUser }) {
       const payload = {
         ...formData,
         username: currentUser.username,
-        userId: currentUser.id, // Aggiungi userId
+        userId: currentUser.id,
       };
-      console.log("Dati inviati a /create_claim:", payload); // Log per debug
+      console.log("Dati inviati a /create_claim:", payload);
       await postExperience(payload);
       setSuccess("Esperienza aggiunta con successo!");
-      setFormData({ company: "", role: "", startDate: "", endDate: "", description: "" });
+      setFormData({
+        company: "",
+        role: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+      });
     } catch (err) {
       setError("Errore durante l'aggiunta dell'esperienza.");
     } finally {

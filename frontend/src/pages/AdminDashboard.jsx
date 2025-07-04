@@ -1,10 +1,8 @@
-
 import { useState } from "react";
 import CertifierList from "../components/CertifierList";
 import Navbar from "../components/Navbar";
 import RequestWhitelistForm from "../components/RequestWhitelistForm";
 import UserSwitcher from "../components/UserSwitcher";
-
 
 function AdminDashboard() {
   const [currentUser, setCurrentUser] = useState({
@@ -13,12 +11,12 @@ function AdminDashboard() {
     role: "admin",
   });
 
-  if (!currentUser) return <div className="p-8">Caricamento admin...</div>;
+  if (!currentUser) return <div className="p-8">Loading admin...</div>;
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard Admin</h1>
+        <h1 className="text-3xl font-bold mb-6">Admin's Dashboard</h1>
 
         <UserSwitcher
           currentUser={currentUser}

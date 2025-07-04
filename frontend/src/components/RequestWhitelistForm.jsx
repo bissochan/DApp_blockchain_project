@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { approveWhitelistRequest, getPendingWhitelistRequests, rejectWhitelistRequest } from "../services/api";
+import {
+  approveWhitelistRequest,
+  getPendingWhitelistRequests,
+  rejectWhitelistRequest,
+} from "../services/api";
 
 function RequestWhitelistForm({ currentUser }) {
   const [requests, setRequests] = useState([]);
@@ -54,7 +58,9 @@ function RequestWhitelistForm({ currentUser }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">Richieste di Whitelist</h2>
-      {successMessage && <p className="text-green-600 mb-4">{successMessage}</p>}
+      {successMessage && (
+        <p className="text-green-600 mb-4">{successMessage}</p>
+      )}
       {requests.length === 0 ? (
         <p>Nessuna richiesta trovata.</p>
       ) : (

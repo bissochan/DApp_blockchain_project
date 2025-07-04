@@ -20,13 +20,14 @@ router.post("/verify_certificate", async (req, res) => {
   const { verifierUsername, certificateHash } = req.body;
 
   // 1. Check if verifier exists
-  const verifier = users.find(u => u.username === verifierUsername)
-    || companies.find(c => c.username === verifierUsername)
-    || admins.find(a => a.username === verifierUsername);
+  const verifier =
+    users.find((u) => u.username === verifierUsername) ||
+    companies.find((c) => c.username === verifierUsername) ||
+    admins.find((a) => a.username === verifierUsername);
   if (!verifier) return res.status(404).json({ error: "Verifier not found" });
 
   // 2. Check if certificate exists
-  const cert = certificates.find(c => c.certificateHash === certificateHash);
+  const cert = certificates.find((c) => c.certificateHash === certificateHash);
   if (!cert) return res.status(404).json({ error: "Certificate not found" });
 
   try {
@@ -39,8 +40,12 @@ router.post("/verify_certificate", async (req, res) => {
 
     // 3. Approve UIManager to spend tokens
     await enqueueTxForWallet(verifierWallet, (nonce) => {
-      const tokenConnected = TokenManager.connect(verifierWallet.connect(provider));
-      return tokenConnected.approve(UIManager.target, TOKEN_PER_LOOKUP, { nonce });
+      const tokenConnected = TokenManager.connect(
+        verifierWallet.connect(provider)
+      );
+      return tokenConnected.approve(UIManager.target, TOKEN_PER_LOOKUP, {
+        nonce,
+      });
     });
 
     // 4. Call getCertificateInfo (writes tx, emits event with CID)
@@ -51,14 +56,14 @@ router.post("/verify_certificate", async (req, res) => {
 
     // 5. Parse logs to extract the CID from CertificateLookup event
     const event = receipt.logs
-      .map(log => {
+      .map((log) => {
         try {
           return UIManager.interface.parseLog(log);
         } catch {
           return null;
         }
       })
-      .find(log => log && log.name === "CertificateLookup");
+      .find((log) => log && log.name === "CertificateLookup");
 
     if (!event) {
       throw new Error("CID not found in emitted logs");
@@ -77,8 +82,8 @@ router.post("/verify_certificate", async (req, res) => {
     const decrypted = decryptObject(encrypted);
 
     // 8. Return verified certificate data
-    const user = users.find(u => u.id === cert.userId);
-    const company = companies.find(c => c.id === cert.companyId);
+    const user = users.find((u) => u.id === cert.userId);
+    const company = companies.find((c) => c.id === cert.companyId);
 
     if (user) decrypted.claim.user = user.username;
     if (company) decrypted.claim.company = company.username;
@@ -88,20 +93,19 @@ router.post("/verify_certificate", async (req, res) => {
 
     res.json({
       verified: true,
-      certificate: decrypted
+      certificate: decrypted,
     });
 
     console.log(`Certificate verified successfully for ${verifierUsername}:`, {
       certificateHash,
       cid,
-      decrypted
+      decrypted,
     });
-
   } catch (err) {
     console.error("Verification failed:", err);
     res.status(500).json({
       error: "Verification failed",
-      details: err.message || String(err)
+      details: err.message || String(err),
     });
   }
 });
