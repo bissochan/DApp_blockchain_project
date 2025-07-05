@@ -28,7 +28,7 @@ function CertifierDashboard() {
     <div className="min-h-screen bg-secondary">
       <Navbar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Certifier's Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6">Certifier Dashboard</h1>
 
         <UserSwitcher
           currentUser={currentUser}

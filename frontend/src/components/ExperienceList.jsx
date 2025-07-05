@@ -14,7 +14,7 @@ function ExperienceList({ currentUser }) {
         const response = await getUserCertificates(currentUser.id);
         setCerts(response.data);
       } catch (err) {
-        setError("Errore durante il caricamento delle esperienze.");
+        setError("Error while loading experiences.");
       } finally {
         setLoading(false);
       }
@@ -22,16 +22,16 @@ function ExperienceList({ currentUser }) {
     fetchExperiences();
   }, [currentUser]);
 
-  if (loading) return <p>Caricamento...</p>;
+  if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h2 className="text-xl font-semibold mb-4">
-        Le Tue Esperienze Certificate
+        Your Certified Experiences
       </h2>
       {certs.length === 0 ? (
-        <p>Nessuna esperienza trovata.</p>
+        <p>No experiences found.</p>
       ) : (
         <div className="space-y-4">
           {certs.map((exp) => (

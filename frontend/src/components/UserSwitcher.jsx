@@ -44,12 +44,12 @@ function UserSwitcher({ currentUser, onChangeUser, filter = "all" }) {
     if (newUser) onChangeUser(newUser);
   };
 
-  if (loading) return <p className="p-4">Caricamento utenti...</p>;
+  if (loading) return <p className="p-4">Loading users...</p>;
 
   return (
     <div className="flex items-center justify-between p-4 bg-gray-100 border rounded mb-4">
       <div className="text-sm">
-        <span className="font-semibold">Utente corrente:</span>{" "}
+        <span className="font-semibold">Current user:</span>{" "}
         {currentUser?.username} ({currentUser?.role})
       </div>
       <div>

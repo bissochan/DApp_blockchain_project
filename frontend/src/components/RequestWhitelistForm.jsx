@@ -18,7 +18,7 @@ function RequestWhitelistForm({ currentUser }) {
         const response = await getPendingWhitelistRequests();
         setRequests(response.data);
       } catch (err) {
-        setError("Errore durante il caricamento delle richieste.");
+        setError("Error while loading requests.");
       } finally {
         setLoading(false);
       }
@@ -38,31 +38,31 @@ function RequestWhitelistForm({ currentUser }) {
       setRequests(requests.filter((req) => req.requestId !== requestId));
       setSuccessMessage(
         isApproved
-          ? "Richiesta approvata con successo."
-          : "Richiesta rifiutata correttamente."
+          ? "Request successfully approved."
+          : "Request successfully rejected."
       );
     } catch (err) {
-      setError("Errore durante l'elaborazione della richiesta.");
+      setError("Error while processing the request.");
     } finally {
       setProcessingId(null);
     }
   };
 
   if (currentUser?.role !== "admin") {
-    return <p className="text-red-500 p-6">Accesso non autorizzato.</p>;
+    return <p className="text-red-500 p-6">Unauthorized access.</p>;
   }
 
-  if (loading) return <p className="p-6">Caricamento...</p>;
+  if (loading) return <p className="p-6">Loading...</p>;
   if (error) return <p className="text-red-500 p-6">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Richieste di Whitelist</h2>
+      <h2 className="text-xl font-semibold mb-4">Whitelist Requests</h2>
       {successMessage && (
         <p className="text-green-600 mb-4">{successMessage}</p>
       )}
       {requests.length === 0 ? (
-        <p>Nessuna richiesta trovata.</p>
+        <p>No requests found.</p>
       ) : (
         <div className="space-y-4">
           {requests.map((req) => (
@@ -71,7 +71,7 @@ function RequestWhitelistForm({ currentUser }) {
               className="border-b pb-2 flex justify-between items-center"
             >
               <div>
-                <h3 className="font-semibold">Utente: {req.username}</h3>
+                <h3 className="font-semibold">User: {req.username}</h3>
                 <p className="text-sm text-gray-600">
                   Wallet: {req.walletAddress}
                 </p>
@@ -81,13 +81,13 @@ function RequestWhitelistForm({ currentUser }) {
                   onClick={() => handleRequest(req.requestId, true)}
                   className="bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
                 >
-                  Approva
+                  Approve
                 </button>
                 <button
                   onClick={() => handleRequest(req.requestId, false)}
                   className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
                 >
-                  Rifiuta
+                  Reject
                 </button>
               </div>
             </div>

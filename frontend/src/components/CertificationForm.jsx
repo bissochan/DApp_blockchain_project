@@ -18,19 +18,15 @@ function CertificationForm({ currentUser }) {
       } catch (err) {
         const message = err.response?.data?.error;
         if (message === "Company approval is still pending") {
-          setError(
-            "La tua richiesta di registrazione come azienda è ancora in attesa."
-          );
+          setError("Your company registration request is still pending.");
         } else if (message === "Company registration was rejected") {
-          setError(
-            "La tua richiesta di registrazione come azienda è stata rifiutata."
-          );
+          setError("Your company registration request was rejected.");
         } else if (message === "Company has been removed from the whitelist") {
           setError(
-            "La tua azienda è stata rimossa dalla whitelist. Contatta un amministratore."
+            "Your company has been removed from the whitelist. Please contact an administrator."
           );
         } else {
-          setError("Errore durante il caricamento delle richieste.");
+          setError("Error while loading certification requests.");
         }
       } finally {
         setLoading(false);
@@ -52,28 +48,26 @@ function CertificationForm({ currentUser }) {
       setRequests(requests.filter((req) => req.claimId !== id));
 
       if (isApproved) {
-        setSuccessMessage("Certificato approvato e salvato con successo.");
+        setSuccessMessage("Certificate approved and saved successfully.");
       } else {
-        setSuccessMessage("Richiesta rifiutata correttamente.");
+        setSuccessMessage("Request successfully rejected.");
       }
     } catch (err) {
-      setError("Errore durante la certificazione.");
+      setError("Error during certification.");
     }
   };
 
-  if (loading) return <p>Caricamento...</p>;
+  if (loading) return <p>Loading...</p>;
   if (error) return <p className="text-red-500">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">
-        Richieste di Certificazione
-      </h2>
+      <h2 className="text-xl font-semibold mb-4">Certification Requests</h2>
 
       {successMessage && <p className="text-green-600">{successMessage}</p>}
 
       {requests.length === 0 ? (
-        <p>Nessuna richiesta trovata.</p>
+        <p>No requests found.</p>
       ) : (
         <div className="space-y-4">
           {requests.map((req) => (
@@ -86,9 +80,9 @@ function CertificationForm({ currentUser }) {
                   CV certification required by userId: {req.claim.userId}
                 </h3>
                 <p>Company ID: {req.claim.companyId}</p>
-                <p>Ruolo: {req.claim.role}</p>
+                <p>Role: {req.claim.role}</p>
                 <p className="text-gray-600">
-                  {req.claim.startDate} - {req.claim.endDate || "In corso"}
+                  {req.claim.startDate} - {req.claim.endDate || "Ongoing"}
                 </p>
                 <p className="text-gray-600">{req.claim.description}</p>
               </div>
@@ -97,13 +91,13 @@ function CertificationForm({ currentUser }) {
                   onClick={() => handleCertify(req.claimId, true)}
                   className="bg-green-600 text-white px-2 py-1 rounded"
                 >
-                  Approva
+                  Approve
                 </button>
                 <button
                   onClick={() => handleCertify(req.claimId, false)}
                   className="bg-red-600 text-white px-2 py-1 rounded"
                 >
-                  Rifiuta
+                  Reject
                 </button>
               </div>
             </div>

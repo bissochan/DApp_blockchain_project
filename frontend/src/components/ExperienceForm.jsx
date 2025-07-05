@@ -22,7 +22,7 @@ function ExperienceForm({ currentUser }) {
           (res.data || []).filter((c) => c.approvalStatus === "approved")
         );
       } catch (err) {
-        console.error("Errore nel caricamento aziende", err);
+        console.error("Error loading companies", err);
       }
     }
     loadCompanies();
@@ -43,9 +43,9 @@ function ExperienceForm({ currentUser }) {
         username: currentUser.username,
         userId: currentUser.id,
       };
-      console.log("Dati inviati a /create_claim:", payload);
+      console.log("Data sent to /create_claim:", payload);
       await postExperience(payload);
-      setSuccess("Esperienza aggiunta con successo!");
+      setSuccess("Experience added successfully!");
       setFormData({
         company: "",
         role: "",
@@ -54,7 +54,7 @@ function ExperienceForm({ currentUser }) {
         description: "",
       });
     } catch (err) {
-      setError("Errore durante l'aggiunta dell'esperienza.");
+      setError("Error while adding the experience.");
     } finally {
       setLoading(false);
     }
@@ -62,10 +62,10 @@ function ExperienceForm({ currentUser }) {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Aggiungi Esperienza</h2>
+      <h2 className="text-xl font-semibold mb-4">Add Experience</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium">Azienda</label>
+          <label className="block text-sm font-medium">Company</label>
           <select
             name="company"
             value={formData.company}
@@ -73,7 +73,7 @@ function ExperienceForm({ currentUser }) {
             className="w-full p-2 border rounded-md"
             required
           >
-            <option value="">-- Seleziona azienda --</option>
+            <option value="">-- Select company --</option>
             {companies.map((c) => (
               <option key={c.id} value={c.username}>
                 {c.username}
@@ -83,7 +83,7 @@ function ExperienceForm({ currentUser }) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Ruolo</label>
+          <label className="block text-sm font-medium">Role</label>
           <input
             type="text"
             name="role"
@@ -95,7 +95,7 @@ function ExperienceForm({ currentUser }) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium">Data Inizio</label>
+            <label className="block text-sm font-medium">Start Date</label>
             <input
               type="date"
               name="startDate"
@@ -106,7 +106,7 @@ function ExperienceForm({ currentUser }) {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium">Data Fine</label>
+            <label className="block text-sm font-medium">End Date</label>
             <input
               type="date"
               name="endDate"
@@ -117,7 +117,7 @@ function ExperienceForm({ currentUser }) {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium">Descrizione</label>
+          <label className="block text-sm font-medium">Description</label>
           <textarea
             name="description"
             value={formData.description}
@@ -133,7 +133,7 @@ function ExperienceForm({ currentUser }) {
           disabled={loading}
           className="bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:bg-gray-400"
         >
-          {loading ? "Caricamento..." : "Salva"}
+          {loading ? "Submitting..." : "Save"}
         </button>
       </form>
     </div>

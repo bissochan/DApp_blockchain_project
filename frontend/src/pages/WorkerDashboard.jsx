@@ -23,13 +23,13 @@ function WorkerDashboard() {
     loadInitialUser();
   }, []);
 
-  if (!currentUser) return <div className="p-8">Loading User...</div>;
+  if (!currentUser) return <div className="p-8">Loading user...</div>;
 
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Worker's Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6">Worker Dashboard</h1>
 
         <UserSwitcher
           currentUser={currentUser}

@@ -15,7 +15,7 @@ function CertifierList({ currentUser }) {
           response.data.filter((c) => c.approvalStatus === "approved")
         );
       } catch (err) {
-        setError("Errore durante il caricamento dei certificatori.");
+        setError("Error while loading certifiers.");
       } finally {
         setLoading(false);
       }
@@ -30,27 +30,27 @@ function CertifierList({ currentUser }) {
     try {
       await removeCertifier({ username });
       setCertifiers(certifiers.filter((c) => c.username !== username));
-      setSuccessMessage(`Certificatore ${username} rimosso con successo.`);
+      setSuccessMessage(`Certifier ${username} successfully removed.`);
     } catch (err) {
-      setError("Errore durante la rimozione del certificatore.");
+      setError("Error while removing the certifier.");
     }
   };
 
   if (currentUser?.role !== "admin") {
-    return <p className="text-red-500 p-6">Accesso non autorizzato.</p>;
+    return <p className="text-red-500 p-6">Unauthorized access.</p>;
   }
 
-  if (loading) return <p className="p-6">Caricamento...</p>;
+  if (loading) return <p className="p-6">Loading...</p>;
   if (error) return <p className="text-red-500 p-6">{error}</p>;
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">Elenco Certificatori</h2>
+      <h2 className="text-xl font-semibold mb-4">Certifier List</h2>
       {successMessage && (
         <p className="text-green-600 mb-4">{successMessage}</p>
       )}
       {certifiers.length === 0 ? (
-        <p>Nessun certificatore trovato.</p>
+        <p>No certifiers found.</p>
       ) : (
         <div className="space-y-4">
           {certifiers.map((certifier) => (
@@ -68,7 +68,7 @@ function CertifierList({ currentUser }) {
                 onClick={() => handleRemove(certifier.username)}
                 className="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700"
               >
-                Rimuovi
+                Remove
               </button>
             </div>
           ))}

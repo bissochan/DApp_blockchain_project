@@ -17,21 +17,19 @@ function Home() {
       if (role === "worker") {
         const response = await postWorker({ username });
         console.log("Worker registered:", response.data);
-        setMessage("Registrazione lavoratore completata con successo!");
+        setMessage("Worker registration completed successfully!");
       } else {
         const response = await postCompany({ username });
         console.log("Company request submitted:", response.data);
-        setMessage(
-          "Richiesta inviata. La tua azienda è in attesa di approvazione."
-        );
+        setMessage("Request submitted. Your company is pending approval.");
       }
       setUsername("");
     } catch (err) {
       console.error(
-        "Errore durante la registrazione:",
+        "Error during registration:",
         err.response?.data || err.message
       );
-      setError("Errore nella registrazione. Prova con uno username diverso.");
+      setError("Registration error. Try a different username.");
     }
   };
 
@@ -43,18 +41,18 @@ function Home() {
           Smart CV Platform
         </h1>
         <p className="text-lg text-center mb-6">
-          A platoform to certify and verify work experiences using blockchain.
+          A platform to certify and verify work experiences using blockchain.
         </p>
 
         <div className="max-w-md mx-auto bg-white p-6 rounded-xl shadow-lg">
           <label className="block text-lg font-semibold mb-2 text-center">
-            Scegli uno username
+            Choose a username
           </label>
           <input
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            placeholder="es. mario_rossi"
+            placeholder="e.g. mario_rossi"
             className="w-full px-4 py-2 border border-gray-300 rounded mb-4"
           />
           {message && (

@@ -47,7 +47,7 @@ function VerifierDashboard() {
       setFundingStatus("success");
       setFundingDetails(res.data);
     } catch (err) {
-      console.error("Errore nel funding:", err);
+      console.error("Error during funding:", err);
       setFundingStatus("error");
     }
   };
@@ -59,20 +59,20 @@ function VerifierDashboard() {
       const res = await getUserTokenBalance({ username: currentUser.username });
       setTokenBalance(res.data.balance);
     } catch (err) {
-      console.error("Errore nel recupero del balance:", err);
-      setTokenBalance("Errore");
+      console.error("Error retrieving balance:", err);
+      setTokenBalance("Error");
     } finally {
       setBalanceLoading(false);
     }
   };
 
-  if (!currentUser) return <div className="p-8">Loading User...</div>;
+  if (!currentUser) return <div className="p-8">Loading user...</div>;
 
   return (
     <div className="min-h-screen bg-secondary">
       <Navbar />
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Verifier's Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6">Verifier Dashboard</h1>
 
         <UserSwitcher
           currentUser={currentUser}
@@ -98,17 +98,17 @@ function VerifierDashboard() {
           >
             Simulate Token Funding
           </button>
-          {fundingStatus === "loading" && <p>⏳ Acquisto in corso...</p>}
+          {fundingStatus === "loading" && <p>⏳ Purchase in progress...</p>}
           {fundingStatus === "success" && (
             <div className="text-green-600 text-sm text-center">
-              ✅ Simulazione acquisto riuscita!
+              ✅ Simulated purchase successful!
               <br />
               <span className="block text-xs text-gray-700 mt-1">
                 User: {fundingDetails?.username}
                 <br />
                 Wallet: {fundingDetails?.wallet}
                 <br />
-                Token Founded: {fundingDetails?.tokenAmount} token
+                Tokens Funded: {fundingDetails?.tokenAmount} token
                 <br />
                 Paid in ETH: {fundingDetails?.paidInEther} ETH
               </span>
@@ -116,7 +116,7 @@ function VerifierDashboard() {
           )}
 
           {fundingStatus === "error" && (
-            <p className="text-red-600">❌ Error during Funding.</p>
+            <p className="text-red-600">❌ Error during funding.</p>
           )}
 
           <button
@@ -124,7 +124,7 @@ function VerifierDashboard() {
             disabled={balanceLoading}
             className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 disabled:bg-gray-400"
           >
-            {balanceLoading ? "Controllo in corso..." : "Mostra Balance Token"}
+            {balanceLoading ? "Checking..." : "Show Token Balance"}
           </button>
           {tokenBalance !== null && (
             <p className="text-sm text-gray-800">

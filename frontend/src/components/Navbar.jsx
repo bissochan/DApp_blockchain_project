@@ -9,13 +9,13 @@ function Navbar() {
         </NavLink>
         <div className="space-x-4">
           <NavLink to="/worker" className="hover:underline">
-            Lavoratore
+            Worker
           </NavLink>
           <NavLink to="/certifier" className="hover:underline">
-            Certificatore
+            Certifier
           </NavLink>
           <NavLink to="/verifier" className="hover:underline">
-            Verificatore
+            Verifier
           </NavLink>
           <NavLink to="/admin" className="hover:underline">
             Admin
